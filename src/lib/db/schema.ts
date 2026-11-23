@@ -25,6 +25,11 @@ CREATE TABLE IF NOT EXISTS users (
   unregistered_at TEXT,
   can_switch_role INTEGER NOT NULL DEFAULT 0,
   must_change_password INTEGER NOT NULL DEFAULT 0,
+  dni_bindex TEXT,
+  privacy_accepted_at TEXT,
+  privacy_policy_version TEXT NOT NULL DEFAULT 'v1.0-2026',
+  is_anonymized INTEGER NOT NULL DEFAULT 0,
+  anonymized_at TEXT,
   created_at TEXT NOT NULL,
   FOREIGN KEY (course_id) REFERENCES academic_courses(id) ON DELETE SET DEFAULT
 );
@@ -305,6 +310,7 @@ CREATE TABLE IF NOT EXISTS topic_test_attempts (
 -- Indices for rapid querying and indexing
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 CREATE INDEX IF NOT EXISTS idx_users_dni ON users(dni_nie);
+CREATE INDEX IF NOT EXISTS idx_users_dni_bindex ON users(dni_bindex);
 CREATE INDEX IF NOT EXISTS idx_users_course ON users(course_id, status);
 CREATE INDEX IF NOT EXISTS idx_cim10_code ON cim10_codes(code);
 CREATE INDEX IF NOT EXISTS idx_cim10_chapter ON cim10_codes(chapter);

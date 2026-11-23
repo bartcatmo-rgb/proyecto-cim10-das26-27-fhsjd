@@ -16,6 +16,8 @@ export default function RegisterPage() {
     phone: '',
     username: '',
     password: '',
+    privacyConsent: false,
+    ageConsent: false,
   });
 
   const [error, setError] = useState<string | null>(null);
@@ -244,9 +246,50 @@ export default function RegisterPage() {
               </div>
             </div>
 
+            {/* RGPD / LOPDGDD / APDCAT Cláusula Informativa y Consentimientos Explícitos */}
+            <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3 text-xs">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-brand-600 shrink-0 mt-0.5" />
+                <div className="text-[11px] text-slate-600 leading-relaxed">
+                  <strong className="text-slate-800">Protección de Datos (Capa 1):</strong> Los datos recabados serán tratados por <em>Fundació Hospital Sant Joan de Déu / Campus Docent</em> con la finalidad exclusiva de gestión académica y evaluación del ciclo DAS 26/27. Prohibida toda cesión comercial. Derechos ARSOPOL ante <code className="font-mono text-brand-700">dpo@fhsjd.local</code>. Consulta la{' '}
+                  <Link href="/privacidad" target="_blank" className="font-bold text-brand-700 underline">
+                    Política de Privacidad Completa (Capa 2) ↗
+                  </Link>.
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-slate-200 space-y-2">
+                <label className="flex items-start gap-2 cursor-pointer font-medium text-slate-700">
+                  <input
+                    type="checkbox"
+                    required
+                    checked={formData.privacyConsent}
+                    onChange={(e) => setFormData({ ...formData, privacyConsent: e.target.checked })}
+                    className="w-4 h-4 mt-0.5 rounded text-brand-600 focus:ring-brand-500"
+                  />
+                  <span>
+                    He leído y acepto expresamente el aviso de privacidad y el tratamiento de mis datos con fines estrictamente académicos. *
+                  </span>
+                </label>
+
+                <label className="flex items-start gap-2 cursor-pointer font-medium text-slate-700">
+                  <input
+                    type="checkbox"
+                    required
+                    checked={formData.ageConsent}
+                    onChange={(e) => setFormData({ ...formData, ageConsent: e.target.checked })}
+                    className="w-4 h-4 mt-0.5 rounded text-brand-600 focus:ring-brand-500"
+                  />
+                  <span>
+                    Confirmo que tengo al menos 14 años para formalizar este registro conforme al Art. 7 de la LOPDGDD 3/2018. *
+                  </span>
+                </label>
+              </div>
+            </div>
+
             <button
               type="submit"
-              disabled={loading || (dniCheck ? !dniCheck.valid : false)}
+              disabled={loading || (dniCheck ? !dniCheck.valid : false) || !formData.privacyConsent || !formData.ageConsent}
               className="w-full mt-4 py-2.5 px-4 rounded-xl text-sm font-bold text-white bg-brand-700 hover:bg-brand-800 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-colors flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
             >
               <span>{loading ? 'Creando Ficha...' : 'Completar Registro en el Aula'}</span>

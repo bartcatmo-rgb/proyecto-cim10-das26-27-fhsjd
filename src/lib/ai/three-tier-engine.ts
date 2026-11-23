@@ -6,6 +6,8 @@
  * Level 3 (Offline Engine): 100% deterministic, offline clinical & educational structuring engine
  */
 
+import { sanitizeForAudit } from '../field-crypto';
+
 export type EngineUsed = 'ollama-local' | 'cloud-ai' | 'offline-clinical-engine';
 
 export interface ThreeTierOutput<T> {
@@ -21,11 +23,18 @@ interface GenerateParams<T> {
 
 /**
  * Execute Three-Tier generation pipeline
+ * Sanitizes prompts to prevent any PII leakage to external LLMs
  */
 export async function executeThreeTierGeneration<T>(
   params: GenerateParams<T>
 ): Promise<ThreeTierOutput<T>> {
   const isVercel = process.env.VERCEL === '1' || process.env.VERCEL === 'true' || Boolean(process.env.VERCEL);
+
+  // RGPD Strict Isolation: ensure zero PII leaves the platform to external AI
+  const cleanPrompt = sanitizeForAudit(params.prompt);
+  const cleanSystemPrompt = params.systemPrompt
+    ? sanitizeForAudit(params.systemPrompt)
+    : 'Eres un docente experto en documentación sanitaria y codificación clínica CIM-10 en España. Solo procesas textos técnicos de casos y directrices oficiales.';
 
   // =========================================================================
   // TIER 1: Local Ollama (Only attempted in local/LAN environments with fast 2s timeout)
@@ -41,7 +50,7 @@ export async function executeThreeTierGeneration<T>(
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: process.env.OLLAMA_MODEL || 'llama3',
-          prompt: params.systemPrompt ? `${params.systemPrompt}\n\n${params.prompt}` : params.prompt,
+          prompt: `${cleanSystemPrompt}\n\n${cleanPrompt}`,
           format: 'json',
           stream: false,
         }),
@@ -88,7 +97,7 @@ export async function executeThreeTierGeneration<T>(
               role: 'user',
               parts: [
                 {
-                  text: `${params.systemPrompt || 'Eres un docente experto en documentación sanitaria y codificación clínica CIM-10 en España.'}\n\nResponde ÚNICAMENTE con un JSON válido estricto sin markdown:\n${params.prompt}`,
+                  text: `${cleanSystemPrompt}\n\nResponde ÚNICAMENTE con un JSON válido estricto sin markdown:\n${cleanPrompt}`,
                 },
               ],
             },
@@ -136,11 +145,11 @@ export async function executeThreeTierGeneration<T>(
           messages: [
             {
               role: 'system',
-              content: params.systemPrompt || 'Genera únicamente salida JSON estructurada válida conforme al esquema solicitado.',
+              content: cleanSystemPrompt,
             },
             {
               role: 'user',
-              content: params.prompt,
+              content: cleanPrompt,
             },
           ],
           response_format: { type: 'json_object' },

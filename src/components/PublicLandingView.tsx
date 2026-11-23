@@ -40,6 +40,8 @@ export default function PublicLandingView() {
     phone: '',
     username: '',
     password: '',
+    privacyConsent: false,
+    ageConsent: false,
   });
   const [showRegPassword, setShowRegPassword] = useState(false);
   const [regError, setRegError] = useState<string | null>(null);
@@ -392,9 +394,46 @@ export default function PublicLandingView() {
                   </div>
                 </div>
 
+                {/* RGPD / LOPDGDD / APDCAT Capa 1 y Consentimientos Explícitos */}
+                <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2 text-[11px] text-slate-600">
+                  <div className="flex items-start gap-1.5 leading-relaxed">
+                    <ShieldCheck className="w-3.5 h-3.5 text-brand-600 shrink-0 mt-0.5" />
+                    <span>
+                      <strong className="text-slate-800">Protección de Datos:</strong> Tratamiento por <em>FHSJD / Campus Docent</em> para gestión y evaluación académica en DAS 26/27. Prohibida toda cesión comercial. Derechos ARSOPOL ante <code className="font-mono text-brand-700">dpo@fhsjd.local</code>. Consulta la{' '}
+                      <a href="/privacidad" target="_blank" className="font-bold text-brand-700 underline">
+                        Política de Privacidad Completa (Capa 2) ↗
+                      </a>.
+                    </span>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-200/80 space-y-1.5">
+                    <label className="flex items-start gap-2 cursor-pointer font-medium text-slate-700">
+                      <input
+                        type="checkbox"
+                        required
+                        checked={regData.privacyConsent}
+                        onChange={(e) => setRegData({ ...regData, privacyConsent: e.target.checked })}
+                        className="w-3.5 h-3.5 mt-0.5 rounded text-brand-600 focus:ring-brand-500"
+                      />
+                      <span>Acepto expresamente el tratamiento de mis datos con fines estrictamente académicos. *</span>
+                    </label>
+
+                    <label className="flex items-start gap-2 cursor-pointer font-medium text-slate-700">
+                      <input
+                        type="checkbox"
+                        required
+                        checked={regData.ageConsent}
+                        onChange={(e) => setRegData({ ...regData, ageConsent: e.target.checked })}
+                        className="w-3.5 h-3.5 mt-0.5 rounded text-brand-600 focus:ring-brand-500"
+                      />
+                      <span>Tengo al menos 14 años para formalizar este registro (Art. 7 LOPDGDD 3/2018). *</span>
+                    </label>
+                  </div>
+                </div>
+
                 <button
                   type="submit"
-                  disabled={regLoading}
+                  disabled={regLoading || !regData.privacyConsent || !regData.ageConsent}
                   className="w-full mt-2 py-3 px-4 rounded-xl text-sm font-bold text-white bg-brand-700 hover:bg-brand-800 disabled:opacity-50 transition-all shadow-md shadow-brand-700/20 flex items-center justify-center gap-2 cursor-pointer"
                 >
                   {regLoading ? (
@@ -425,15 +464,20 @@ export default function PublicLandingView() {
         </div>
 
         {/* Security & Academic Notice Footer Card */}
-        <div className="bg-slate-100/80 rounded-xl border border-slate-200/80 p-4 text-center space-y-1 text-slate-500 text-[11px] leading-relaxed">
+        <div className="bg-slate-100/80 rounded-xl border border-slate-200/80 p-4 text-center space-y-1.5 text-slate-500 text-[11px] leading-relaxed">
           <div className="flex items-center justify-center gap-1.5 font-semibold text-slate-700">
             <ShieldCheck className="w-4 h-4 text-brand-600" />
             <span>Acceso Restringido · Entorno Docente Blindado</span>
           </div>
           <p>
             Uso reservado exclusivamente a alumnos matriculados y profesorado de la Fundación Hospital San Juan de Dios.
-            Sesión segura con HMAC-SHA256 y protección de datos conforme a la normativa vigente.
+            Sesión segura con HMAC-SHA256 y protección de datos conforme a RGPD (UE 2016/679) y LOPDGDD 3/2018.
           </p>
+          <div className="pt-1">
+            <a href="/privacidad" className="font-semibold text-brand-700 hover:text-brand-900 underline">
+              Política de Privacidad y Tratamiento de Datos (APDCAT / RGPD)
+            </a>
+          </div>
         </div>
 
       </div>

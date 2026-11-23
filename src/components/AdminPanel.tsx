@@ -277,6 +277,28 @@ export default function AdminPanel({ adminUser, analytics, students, initialCour
     reader.readAsText(file);
   };
 
+  const handleRgpdExport = (studentId: string) => {
+    window.open(`/api/admin/users/${studentId}/export`, '_blank');
+  };
+
+  const handleRgpdAnonymize = async (studentId: string, studentName: string) => {
+    if (!window.confirm(`¿Confirmas la supresión y anonimización irreversible de los datos personales de "${studentName}" (Art. 17 RGPD)? Sus datos personales serán purgados y solo se conservarán estadísticas agregadas no identificables.`)) {
+      return;
+    }
+    try {
+      const res = await fetch(`/api/admin/users/${studentId}/anonymize`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || 'Error al anonimizar expediente');
+        return;
+      }
+      alert(data.message || 'Expediente anonimizado conforme al Art. 17 RGPD.');
+      fetchMetricsForCourse(selectedCourseId);
+    } catch {
+      alert('Error de conexión al procesar la solicitud RGPD.');
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
       
@@ -583,16 +605,32 @@ export default function AdminPanel({ adminUser, analytics, students, initialCour
                         {st.avgScore}%
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-right">
+                    <td className="py-3 px-4 text-right space-x-1.5 whitespace-nowrap">
                       <button
                         type="button"
                         onClick={() => {
                           setSelectedStudentId(st.id);
                           setActiveTab('report_gen');
                         }}
-                        className="text-brand-700 hover:text-brand-800 font-bold bg-brand-50 hover:bg-brand-100 px-3 py-1 rounded-lg transition-colors"
+                        className="text-brand-700 hover:text-brand-800 font-bold bg-brand-50 hover:bg-brand-100 px-2.5 py-1 rounded-lg transition-colors text-[11px]"
                       >
                         Emitir Informe
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleRgpdExport(st.id)}
+                        className="text-indigo-700 hover:text-indigo-800 font-bold bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-lg transition-colors text-[11px]"
+                        title="Exportar datos personales (Art. 15 y 20 RGPD)"
+                      >
+                        Exportar JSON
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleRgpdAnonymize(st.id, st.fullName)}
+                        className="text-rose-700 hover:text-rose-800 font-bold bg-rose-50 hover:bg-rose-100 px-2.5 py-1 rounded-lg transition-colors text-[11px]"
+                        title="Anonimizar irreversiblemente (Art. 17 RGPD)"
+                      >
+                        Anonimizar
                       </button>
                     </td>
                   </tr>

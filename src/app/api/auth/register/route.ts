@@ -16,7 +16,22 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { username, password, fullName, dniNie, email, phone, academicGroup } = body;
+    const { username, password, fullName, dniNie, email, phone, academicGroup, privacyConsent, ageConsent } = body;
+
+    // RGPD / LOPDGDD Explicit Consent & Age Verification (Art. 7 LOPDGDD / Art. 13 RGPD)
+    if (!privacyConsent) {
+      return NextResponse.json(
+        { error: 'Debe aceptar la política de privacidad y el tratamiento académico de datos para formalizar el registro.' },
+        { status: 400 }
+      );
+    }
+
+    if (!ageConsent) {
+      return NextResponse.json(
+        { error: 'Debe confirmar que tiene al menos 14 años conforme al Art. 7 de la LOPDGDD 3/2018.' },
+        { status: 400 }
+      );
+    }
 
     // Basic presence checks
     if (!username || !password || !fullName || !dniNie || !email || !academicGroup) {

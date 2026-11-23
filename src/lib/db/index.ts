@@ -6,6 +6,7 @@ import { SEED_USERS, SEED_CIM10_CODES, SEED_NOTICES } from './seed';
 import { SEED_100_MEAP_QUESTIONS } from './seed-meap-100';
 import { SEED_REVERSE_CODING_CASES } from './seed-reverse-coding';
 import { hashPassword } from '../auth/crypto';
+import { encryptField, computeBlindIndex } from '../field-crypto';
 
 let dbInstance: Database.Database | null = null;
 let isInitialized = false;
@@ -116,6 +117,11 @@ export function initDb(db: Database.Database): void {
     runColumnMigration('users', 'must_change_password', 'INTEGER NOT NULL DEFAULT 0');
     runColumnMigration('users', 'phone', 'TEXT');
     runColumnMigration('users', 'subgroup', 'TEXT');
+    runColumnMigration('users', 'dni_bindex', 'TEXT');
+    runColumnMigration('users', 'privacy_accepted_at', 'TEXT');
+    runColumnMigration('users', 'privacy_policy_version', "TEXT NOT NULL DEFAULT 'v1.0-2026'");
+    runColumnMigration('users', 'is_anonymized', 'INTEGER NOT NULL DEFAULT 0');
+    runColumnMigration('users', 'anonymized_at', 'TEXT');
     runColumnMigration('users', 'updated_at', 'TEXT');
 
     // Table: test_attempts
@@ -184,8 +190,8 @@ export function initDb(db: Database.Database): void {
 
   // 2. Check and seed users (idempotent for all seed users)
   const insertUser = db.prepare(`
-    INSERT OR IGNORE INTO users (id, username, password_hash, password_salt, full_name, dni_nie, email, phone, academic_group, role, course_id, status, can_switch_role, must_change_password, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?)
+    INSERT OR IGNORE INTO users (id, username, password_hash, password_salt, full_name, dni_nie, dni_bindex, email, phone, academic_group, role, course_id, status, can_switch_role, must_change_password, privacy_accepted_at, privacy_policy_version, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, 'v1.0-2026', ?)
   `);
 
   const adminDefaultPassword = process.env.ADMIN_DEFAULT_PASSWORD?.trim();
@@ -202,13 +208,18 @@ export function initDb(db: Database.Database): void {
       }
 
       const { hash, salt } = hashPassword(pwd);
+      const rawDni = u.dniNie.trim().toUpperCase();
+      const encryptedDni = encryptField(rawDni);
+      const bindex = computeBlindIndex(rawDni);
+
       insertUser.run(
         u.id,
         u.username,
         hash,
         salt,
         u.fullName,
-        u.dniNie,
+        encryptedDni,
+        bindex,
         u.email,
         u.phone,
         u.academicGroup,
@@ -216,6 +227,7 @@ export function initDb(db: Database.Database): void {
         'DAS-26-27',
         u.canSwitchRole ? 1 : 0,
         mustChange,
+        new Date().toISOString(),
         new Date().toISOString()
       );
     }
@@ -249,27 +261,33 @@ export function initDb(db: Database.Database): void {
       // 1. Daughter dual account
       const daughter = seedData.daughter;
       if (daughter && daughter.dniNie) {
-        const existing = db.prepare('SELECT id FROM users WHERE UPPER(dni_nie) = UPPER(?) OR LOWER(username) = LOWER(?)').get(daughter.dniNie, daughter.username) as any;
+        const rawDni = daughter.dniNie.trim().toUpperCase();
+        const bindex = computeBlindIndex(rawDni);
+        const encryptedDni = encryptField(rawDni);
+
+        const existing = db.prepare('SELECT id FROM users WHERE dni_bindex = ? OR UPPER(dni_nie) = ? OR LOWER(username) = LOWER(?)').get(bindex, rawDni, daughter.username) as any;
         if (!existing) {
           const { hash, salt } = hashPassword(daughter.password || 'Alicia2026!');
           db.prepare(`
-            INSERT INTO users (id, username, password_hash, password_salt, full_name, dni_nie, email, phone, academic_group, role, course_id, status, can_switch_role, must_change_password, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'admin', ?, 'active', 1, 0, ?)
+            INSERT INTO users (id, username, password_hash, password_salt, full_name, dni_nie, dni_bindex, email, phone, academic_group, role, course_id, status, can_switch_role, must_change_password, privacy_accepted_at, privacy_policy_version, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'admin', ?, 'active', 1, 0, ?, 'v1.0-2026', ?)
           `).run(
             'usr_daughter_dual',
             (daughter.username || 'alicia').trim().toLowerCase(),
             hash,
             salt,
             daughter.fullName || 'Alicia',
-            daughter.dniNie.trim().toUpperCase(),
+            encryptedDni,
+            bindex,
             daughter.email || 'alicia.estudiante@centro.local',
             daughter.phone || null,
             daughter.academicGroup || 'DAS 26/27 - Grupo A',
             daughter.courseId || 'DAS-26-27',
+            new Date().toISOString(),
             new Date().toISOString()
           );
         } else {
-          db.prepare('UPDATE users SET can_switch_role = 1 WHERE id = ?').run(existing.id);
+          db.prepare('UPDATE users SET can_switch_role = 1, dni_bindex = ? WHERE id = ?').run(bindex, existing.id);
         }
       }
 
@@ -277,26 +295,32 @@ export function initDb(db: Database.Database): void {
       if (Array.isArray(seedData.users)) {
         for (const u of seedData.users) {
           if (!u.username || !u.dniNie) continue;
-          const exists = db.prepare('SELECT id FROM users WHERE UPPER(dni_nie) = UPPER(?) OR LOWER(username) = LOWER(?)').get(u.dniNie, u.username);
+          const rawDni = u.dniNie.trim().toUpperCase();
+          const bindex = computeBlindIndex(rawDni);
+          const encryptedDni = encryptField(rawDni);
+
+          const exists = db.prepare('SELECT id FROM users WHERE dni_bindex = ? OR UPPER(dni_nie) = ? OR LOWER(username) = LOWER(?)').get(bindex, rawDni, u.username);
           if (!exists) {
             const { hash, salt } = hashPassword(u.password || 'Aula2026!');
             db.prepare(`
-              INSERT INTO users (id, username, password_hash, password_salt, full_name, dni_nie, email, phone, academic_group, role, course_id, status, can_switch_role, must_change_password, created_at)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?)
+              INSERT INTO users (id, username, password_hash, password_salt, full_name, dni_nie, dni_bindex, email, phone, academic_group, role, course_id, status, can_switch_role, must_change_password, privacy_accepted_at, privacy_policy_version, created_at)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, 'v1.0-2026', ?)
             `).run(
               u.id || `usr_ext_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
               u.username.trim().toLowerCase(),
               hash,
               salt,
               u.fullName || u.username,
-              u.dniNie.trim().toUpperCase(),
+              encryptedDni,
+              bindex,
               u.email || `${u.username}@centro.local`,
               u.phone || null,
               u.academicGroup || 'DAS 26/27',
               u.role || 'student',
               u.courseId || 'DAS-26-27',
               u.canSwitchRole ? 1 : 0,
-              u.mustChangePassword ? 1 : 0,
+              0,
+              new Date().toISOString(),
               new Date().toISOString()
             );
           }

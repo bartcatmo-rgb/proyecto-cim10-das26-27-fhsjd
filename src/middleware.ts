@@ -4,7 +4,7 @@ import type { NextRequest } from 'next/server';
 const SESSION_COOKIE_NAME = 'aulacim10_session';
 
 // Public pages that are accessible without an active session
-const PUBLIC_PAGES = new Set(['/', '/login', '/registro']);
+const PUBLIC_PAGES = new Set(['/', '/login', '/registro', '/privacidad']);
 
 // Public API endpoints that do not require an active session
 const PUBLIC_API_ROUTES = new Set([

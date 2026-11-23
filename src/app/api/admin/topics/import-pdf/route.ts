@@ -18,8 +18,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No se ha adjuntado ningún archivo PDF.' }, { status: 400 });
     }
 
+    // Strict MIME & Size validation
+    if (file.size > 25 * 1024 * 1024) {
+      return NextResponse.json({ error: 'El archivo excede el límite máximo permitido (25 MB).' }, { status: 413 });
+    }
+
+    if (file.type && file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+      return NextResponse.json({ error: 'Tipo de archivo no permitido. Debe ser un documento PDF oficial.' }, { status: 415 });
+    }
+
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
+
+    // Verify %PDF- magic bytes header
+    if (!buffer.subarray(0, 5).toString('latin1').startsWith('%PDF-')) {
+      return NextResponse.json({ error: 'Cabecera no válida: el archivo no contiene la firma binaria %PDF-.' }, { status: 422 });
+    }
 
     // 1. Extract text natively using Node.js zlib
     let extracted;

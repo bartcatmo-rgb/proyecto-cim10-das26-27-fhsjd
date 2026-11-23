@@ -21,6 +21,7 @@ import {
   HistoricalAttemptRecord,
 } from '@/types';
 import { maskDni } from '../auth/crypto';
+import { encryptField, decryptField, computeBlindIndex, sanitizeForAudit } from '../field-crypto';
 import crypto from 'crypto';
 
 // -------------------------------------------------------------
@@ -39,7 +40,7 @@ export function getUserByUsername(username: string): (User & { passwordHash: str
     id: row.id,
     username: row.username,
     fullName: row.full_name,
-    dniNie: row.dni_nie,
+    dniNie: decryptField(row.dni_nie),
     email: row.email,
     phone: row.phone || undefined,
     academicGroup: row.academic_group,
@@ -65,7 +66,7 @@ export function getUserById(id: string): User | null {
     id: row.id,
     username: row.username,
     fullName: row.full_name,
-    dniNie: row.dni_nie,
+    dniNie: decryptField(row.dni_nie),
     email: row.email,
     phone: row.phone || undefined,
     academicGroup: row.academic_group,
@@ -82,14 +83,20 @@ export function getUserById(id: string): User | null {
 
 export function getUserByDni(dniNie: string): User | null {
   const db = getDb();
-  const row = db.prepare('SELECT * FROM users WHERE UPPER(dni_nie) = UPPER(?)').get(dniNie.trim()) as any;
+  const rawDni = dniNie.trim().toUpperCase();
+  const bindex = computeBlindIndex(rawDni);
+
+  // Search by blind index first (fast hashed search) or fallback to raw dni
+  const row = db
+    .prepare('SELECT * FROM users WHERE dni_bindex = ? OR UPPER(dni_nie) = ?')
+    .get(bindex, rawDni) as any;
   if (!row) return null;
 
   return {
     id: row.id,
     username: row.username,
     fullName: row.full_name,
-    dniNie: row.dni_nie,
+    dniNie: decryptField(row.dni_nie),
     email: row.email,
     phone: row.phone || undefined,
     academicGroup: row.academic_group,
@@ -123,6 +130,9 @@ export function logSecurityEvent(event: {
   try {
     const db = getDb();
     const id = `sec_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
+    // Zero PII in audit logs: sanitize details
+    const cleanDetails = sanitizeForAudit(event.details).substring(0, 500);
+
     db.prepare(`
       INSERT INTO security_audit_logs (id, timestamp, event_type, ip_address, user_id, severity, details)
       VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -133,7 +143,7 @@ export function logSecurityEvent(event: {
       event.ipAddress || null,
       event.userId || null,
       event.severity || 'INFO',
-      event.details.substring(0, 500)
+      cleanDetails
     );
   } catch (err) {
     console.warn('Failed to log security event:', err);
@@ -157,8 +167,6 @@ export function getSecurityAuditLogs(limit = 100): any[] {
   }));
 }
 
-
-
 export function createUser(userData: {
   username: string;
   passwordHash: string;
@@ -170,28 +178,42 @@ export function createUser(userData: {
   academicGroup: string;
   role?: 'student' | 'admin';
   courseId?: string;
+  privacyAcceptedAt?: string;
+  privacyPolicyVersion?: string;
 }): User {
   const db = getDb();
   const id = `usr_${crypto.randomUUID()}`;
   const now = new Date().toISOString();
   const role = userData.role || 'student';
   const courseId = userData.courseId || 'DAS-26-27';
+  const rawDni = userData.dniNie.trim().toUpperCase();
+  const encryptedDni = encryptField(rawDni);
+  const dniBindex = computeBlindIndex(rawDni);
+  const privacyAcceptedAt = userData.privacyAcceptedAt || now;
+  const privacyPolicyVersion = userData.privacyPolicyVersion || 'v1.0-2026';
 
   db.prepare(`
-    INSERT INTO users (id, username, password_hash, password_salt, full_name, dni_nie, email, phone, academic_group, role, course_id, status, enrolled_at, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?)
+    INSERT INTO users (
+      id, username, password_hash, password_salt, full_name, dni_nie, dni_bindex,
+      email, phone, academic_group, role, course_id, status,
+      privacy_accepted_at, privacy_policy_version, is_anonymized, enrolled_at, created_at
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, 0, ?, ?)
   `).run(
     id,
     userData.username.trim().toLowerCase(),
     userData.passwordHash,
     userData.passwordSalt,
     userData.fullName.trim(),
-    userData.dniNie.trim().toUpperCase(),
+    encryptedDni,
+    dniBindex,
     userData.email.trim().toLowerCase(),
     userData.phone ? userData.phone.trim() : null,
     userData.academicGroup.trim(),
     role,
     courseId,
+    privacyAcceptedAt,
+    privacyPolicyVersion,
     now,
     now
   );
@@ -200,7 +222,7 @@ export function createUser(userData: {
     id,
     username: userData.username.trim().toLowerCase(),
     fullName: userData.fullName.trim(),
-    dniNie: userData.dniNie.trim().toUpperCase(),
+    dniNie: rawDni,
     email: userData.email.trim().toLowerCase(),
     phone: userData.phone ? userData.phone.trim() : undefined,
     academicGroup: userData.academicGroup.trim(),
@@ -210,6 +232,107 @@ export function createUser(userData: {
     enrolledAt: now,
     createdAt: now,
   };
+}
+
+/**
+ * Export full personal data file for RGPD Right of Access & Data Portability (Arts. 15 & 20 RGPD)
+ */
+export function exportUserData(userId: string) {
+  const db = getDb();
+  const user = getUserById(userId);
+  if (!user) return null;
+
+  // Retrieve test attempts
+  const attempts = db.prepare(`
+    SELECT id, course_id, discipline, level, score, total_questions, correct_count, time_spent_seconds, passed, created_at
+    FROM test_attempts
+    WHERE user_id = ?
+    ORDER BY created_at DESC
+  `).all(userId);
+
+  // Retrieve discipline progress
+  const progress = db.prepare(`
+    SELECT discipline, current_level, highest_unlocked_level, attempts_count, total_questions_answered, total_correct, average_score, last_score, updated_at
+    FROM discipline_progress
+    WHERE user_id = ?
+  `).all(userId);
+
+  // Retrieve topic study progress
+  const topicProgress = db.prepare(`
+    SELECT t.title as topic_title, s.section_title, p.completed, p.read_at
+    FROM topic_study_progress p
+    JOIN topics t ON p.topic_id = t.id
+    JOIN topic_summaries s ON p.summary_id = s.id
+    WHERE p.user_id = ?
+  `).all(userId);
+
+  return {
+    exportMetadata: {
+      institution: 'Fundació Hospital Sant Joan de Déu · AulaCIM-10 (DAS 26/27)',
+      requestedAt: new Date().toISOString(),
+      legalBasis: 'RGPD (UE 2016/679) Art. 15 y 20 - Derecho de Acceso y Portabilidad de Datos',
+      dpoContact: 'dpo@fhsjd.local',
+    },
+    userProfile: {
+      id: user.id,
+      username: user.username,
+      fullName: user.fullName,
+      dniNie: user.dniNie,
+      email: user.email,
+      phone: user.phone || null,
+      academicGroup: user.academicGroup,
+      courseId: user.courseId,
+      enrolledAt: user.enrolledAt,
+    },
+    academicRecords: {
+      totalAttempts: attempts.length,
+      attemptsHistory: attempts,
+      disciplineProgress: progress,
+      topicProgress: topicProgress,
+    }
+  };
+}
+
+/**
+ * Anonymize student account irreversibly (Right to Erasure / Storage Limitation, Art. 17 RGPD)
+ * Strips all identifying PII (name, DNI, credentials, email) while preserving statistical metrics.
+ */
+export function anonymizeUser(userId: string): boolean {
+  const db = getDb();
+  const user = getUserById(userId);
+  if (!user) return false;
+
+  const now = new Date().toISOString();
+  const anonSuffix = crypto.randomBytes(4).toString('hex');
+  const anonUsername = `anon_${anonSuffix}`;
+  const anonDni = `ANON_${anonSuffix.toUpperCase()}`;
+  const anonEmail = `anon_${anonSuffix}@fhsjd.local`;
+
+  db.prepare(`
+    UPDATE users
+    SET full_name = 'Exalumno/a Anonimizado/a',
+        username = ?,
+        dni_nie = ?,
+        dni_bindex = NULL,
+        email = ?,
+        phone = NULL,
+        password_hash = 'ANON_PURGED',
+        password_salt = 'ANON_PURGED',
+        status = 'inactive',
+        is_anonymized = 1,
+        anonymized_at = ?,
+        unregistered_at = ?
+    WHERE id = ?
+  `).run(anonUsername, anonDni, anonEmail, now, now, userId);
+
+  logSecurityEvent({
+    eventType: 'RGPD_USER_ANONYMIZED',
+    userId: user.id,
+    severity: 'INFO',
+    details: `Cuenta de usuario ${user.id} anonimizada irreversiblemente según Art. 17 RGPD.`
+  });
+
+  return true;
 }
 
 export function updateUserProfile(

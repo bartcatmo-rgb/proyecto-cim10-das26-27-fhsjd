@@ -190,8 +190,12 @@ export function initDb(db: Database.Database): void {
 
   // 2. Check and seed users (idempotent for all seed users)
   const insertUser = db.prepare(`
-    INSERT OR IGNORE INTO users (id, username, password_hash, password_salt, full_name, dni_nie, dni_bindex, email, phone, academic_group, role, course_id, status, can_switch_role, must_change_password, privacy_accepted_at, privacy_policy_version, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, 'v1.0-2026', ?)
+    INSERT OR IGNORE INTO users (
+      id, username, password_hash, password_salt, full_name, dni_nie, dni_bindex,
+      email, phone, academic_group, role, course_id, status,
+      can_switch_role, must_change_password, privacy_accepted_at, privacy_policy_version, created_at
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, 'v1.0-2026', ?)
   `);
 
   const adminDefaultPassword = process.env.ADMIN_DEFAULT_PASSWORD?.trim();
@@ -269,8 +273,12 @@ export function initDb(db: Database.Database): void {
         if (!existing) {
           const { hash, salt } = hashPassword(daughter.password || 'Alicia2026!');
           db.prepare(`
-            INSERT INTO users (id, username, password_hash, password_salt, full_name, dni_nie, dni_bindex, email, phone, academic_group, role, course_id, status, can_switch_role, must_change_password, privacy_accepted_at, privacy_policy_version, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'admin', ?, 'active', 1, 0, ?, 'v1.0-2026', ?)
+            INSERT INTO users (
+              id, username, password_hash, password_salt, full_name, dni_nie, dni_bindex,
+              email, phone, academic_group, role, course_id, status,
+              can_switch_role, must_change_password, privacy_accepted_at, privacy_policy_version, created_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', 1, 0, ?, 'v1.0-2026', ?)
           `).run(
             'usr_daughter_dual',
             (daughter.username || 'alicia').trim().toLowerCase(),
@@ -282,6 +290,7 @@ export function initDb(db: Database.Database): void {
             daughter.email || 'alicia.estudiante@centro.local',
             daughter.phone || null,
             daughter.academicGroup || 'DAS 26/27 - Grupo A',
+            'admin',
             daughter.courseId || 'DAS-26-27',
             new Date().toISOString(),
             new Date().toISOString()
@@ -303,8 +312,12 @@ export function initDb(db: Database.Database): void {
           if (!exists) {
             const { hash, salt } = hashPassword(u.password || 'Aula2026!');
             db.prepare(`
-              INSERT INTO users (id, username, password_hash, password_salt, full_name, dni_nie, dni_bindex, email, phone, academic_group, role, course_id, status, can_switch_role, must_change_password, privacy_accepted_at, privacy_policy_version, created_at)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, 'v1.0-2026', ?)
+              INSERT INTO users (
+                id, username, password_hash, password_salt, full_name, dni_nie, dni_bindex,
+                email, phone, academic_group, role, course_id, status,
+                can_switch_role, must_change_password, privacy_accepted_at, privacy_policy_version, created_at
+              )
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, 0, ?, 'v1.0-2026', ?)
             `).run(
               u.id || `usr_ext_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
               u.username.trim().toLowerCase(),
@@ -319,7 +332,6 @@ export function initDb(db: Database.Database): void {
               u.role || 'student',
               u.courseId || 'DAS-26-27',
               u.canSwitchRole ? 1 : 0,
-              0,
               new Date().toISOString(),
               new Date().toISOString()
             );

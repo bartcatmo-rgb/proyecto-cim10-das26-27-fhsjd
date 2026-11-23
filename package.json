@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "AulaCIM-10 · FHSJD (DAS 26/27) - Codificación clínica CIM-10, MEAP, ámbitos asistenciales y seguimiento por niveles",
   "private": true,
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",

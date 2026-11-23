@@ -49,3 +49,6 @@ Thumbs.db
 # Portable packages
 *.zip
 runtime/node/
+
+.vercel
+.env*

@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased selection:bg-brand-500 selection:text-white min-h-screen flex flex-col;
+  }
+}
+
+/* Print Styles for Student Reports & Diplomas */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  
+  .print\\:hidden,
+  header,
+  footer,
+  nav,
+  button,
+  .no-print {
+    display: none !important;
+  }
+
+  .print\\:block {
+    display: block !important;
+  }
+
+  .print\\:border-none {
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  .printable-card {
+    page-break-inside: avoid;
+    box-shadow: none !important;
+    border: 1px solid #cbd5e1 !important;
+    padding: 1.5rem !important;
+    margin: 0 !important;
+    width: 100% !important;
+  }
+}

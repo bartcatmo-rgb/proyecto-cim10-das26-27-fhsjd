@@ -19,6 +19,7 @@ import {
   Zap,
   Trophy,
   History,
+  MessageSquare,
 } from 'lucide-react';
 import PublicLandingView from '@/components/PublicLandingView';
 import TopicIndexView from '@/components/TopicIndexView';
@@ -94,6 +95,14 @@ export default async function HomePage() {
             >
               <BookOpen className="w-4 h-4" />
               <span>Manuales</span>
+            </Link>
+
+            <Link
+              href="/chat"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-indigo-950/80 hover:bg-indigo-900 text-indigo-300 border border-indigo-700/60 transition-all shadow-sm"
+            >
+              <MessageSquare className="w-4 h-4" />
+              <span>Chat de Aula / Consultas</span>
             </Link>
           </div>
         </div>

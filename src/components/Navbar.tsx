@@ -20,6 +20,7 @@ import {
   Tv,
   Zap,
   ShieldAlert,
+  MessageSquare,
 } from 'lucide-react';
 import { User } from '@/types';
 import { maskDni } from '@/lib/auth/validation';
@@ -77,6 +78,7 @@ export default function Navbar({ user }: NavbarProps) {
     { href: '/kahoot', label: 'Kahoot (10-20)', icon: Zap },
     { href: '/examenes-realizados', label: 'Pruebas Curso', icon: History },
     { href: '/catalogo', label: 'Catálogo', icon: FileSpreadsheet },
+    { href: '/chat', label: 'Chat Aula', icon: MessageSquare },
     { href: '/manuales', label: 'Manuales', icon: BookOpen },
   ];
 

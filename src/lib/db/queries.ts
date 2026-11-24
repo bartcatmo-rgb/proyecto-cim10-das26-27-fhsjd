@@ -24,10 +24,13 @@ import {
   SecurityEnvironmentStatus,
   SecurityTimelineBucket,
   SecurityOverviewResponse,
+  ChatChannel,
+  ChatMessage,
 } from '@/types';
 import { maskDni } from '../auth/crypto';
 import { encryptField, decryptField, computeBlindIndex, sanitizeForAudit } from '../field-crypto';
 import { hashIp, maskIp, summarizeUserAgent, sanitizeSecurityDetails } from '../security-telemetry';
+import { sendIntrusionAlert, getAlertChannelsStatus, sendTestIntrusionAlert } from '../security/intrusion-alerts';
 import crypto from 'crypto';
 
 // -------------------------------------------------------------
@@ -228,6 +231,40 @@ export function logSecurityEvent(event: {
       cleanDetails,
       timestamp
     );
+
+    // Automatic Intrusion Alert Notification (100% Free: Telegram Bot / Webhook / Email)
+    const isIntrusionAlertTarget =
+      normalizedSeverity === 'CRITICAL' ||
+      ['UNAUTHORIZED_401', 'FORBIDDEN_403', 'RATE_LIMIT_BLOCKED', 'PRIVILEGE_ESCALATION_ATTEMPT', 'IDOR_BLOCKED', 'SESSION_REVOKED'].includes(event.eventType);
+
+    if (isIntrusionAlertTarget) {
+      sendIntrusionAlert({
+        eventType: event.eventType,
+        severity: normalizedSeverity,
+        route: event.route || undefined,
+        ipHash: computedIpHash,
+        ipAddress: maskedIp || undefined,
+        details: cleanDetails,
+        timestamp,
+      }).then((alertRes) => {
+        if (alertRes.sent) {
+          try {
+            const auditDb = getDb();
+            const alertLogId = `sec_alt_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`;
+            auditDb.prepare(`
+              INSERT INTO security_audit_logs (id, timestamp, event_type, severity, route, details, created_at)
+              VALUES (?, ?, 'ALERT_DISPATCHED', 'INFO', ?, ?, ?)
+            `).run(
+              alertLogId,
+              new Date().toISOString(),
+              event.route || null,
+              `Alerta de intrusión 100% gratuita transmitida vía: ${alertRes.channels.join(', ')} para evento ${event.eventType}.`,
+              new Date().toISOString()
+            );
+          } catch {}
+        }
+      }).catch(() => {});
+    }
   } catch (err) {
     console.warn('Defensive telemetry logging note:', err);
   }
@@ -334,6 +371,7 @@ export function getSecurityOverview(options: {
     databaseEngine: isVercelServerless ? 'SQLite Serverless (/tmp/cim10_centro.db)' : 'SQLite WAL (./data/cim10_centro.db)',
     aiPromptSanitizationActive: true,
     globalSessionVersion: getGlobalSessionVersion(),
+    alertChannels: getAlertChannelsStatus(),
   };
 
   // 5. Timeline buckets (12 buckets of 2 hours covering last 24 hours)
@@ -2687,4 +2725,151 @@ export function importStudentProgressBackup(userId: string, data: any): { succes
 
   tx();
   return { success: true, message: `Progreso personal sincronizado con éxito (${data.attempts.length} intentos procesados).` };
+}
+
+// -------------------------------------------------------------
+// CHAT DE AULA Y COMUNICACIÓN DOCENTE (ALUMNOS ↔ PROFESORES)
+// -------------------------------------------------------------
+
+function sanitizeChatText(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+    .trim()
+    .substring(0, 500);
+}
+
+export function getChatChannels(courseId = 'DAS-26-27'): ChatChannel[] {
+  const db = getDb();
+  const rows = db.prepare(`
+    SELECT * FROM chat_channels
+    WHERE course_id = ?
+    ORDER BY is_announcement_only DESC, name ASC
+  `).all(courseId) as any[];
+
+  return rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    description: r.description || '',
+    courseId: r.course_id,
+    isAnnouncementOnly: Boolean(r.is_announcement_only),
+    createdAt: r.created_at,
+  }));
+}
+
+export function getChatMessages(channelId: string, limit = 100, includeHidden = false): ChatMessage[] {
+  const db = getDb();
+  const whereHidden = includeHidden ? '' : 'AND is_hidden = 0';
+
+  const rows = db.prepare(`
+    SELECT * FROM chat_messages
+    WHERE channel_id = ? ${whereHidden}
+    ORDER BY created_at ASC
+    LIMIT ?
+  `).all(channelId, limit) as any[];
+
+  return rows.map((r) => ({
+    id: r.id,
+    channelId: r.channel_id,
+    userId: r.user_id,
+    userName: r.user_name,
+    userRole: (r.user_role === 'admin' ? 'admin' : 'student') as 'student' | 'admin',
+    content: r.content,
+    isPinned: Boolean(r.is_pinned),
+    isHidden: Boolean(r.is_hidden),
+    hiddenBy: r.hidden_by || undefined,
+    createdAt: r.created_at,
+  }));
+}
+
+export function postChatMessage(data: {
+  channelId: string;
+  userId: string;
+  userName: string;
+  userRole: 'student' | 'admin';
+  content: string;
+}): ChatMessage {
+  const db = getDb();
+  const channel = db.prepare('SELECT * FROM chat_channels WHERE id = ?').get(data.channelId) as any;
+  if (!channel) {
+    throw new Error('Canal no encontrado');
+  }
+
+  // Announcement channels restriction
+  if (channel.is_announcement_only && data.userRole !== 'admin') {
+    throw new Error('Solo los profesores pueden publicar en este canal de avisos oficiales.');
+  }
+
+  const cleanContent = sanitizeChatText(data.content);
+  if (!cleanContent) {
+    throw new Error('El mensaje no puede estar vacío.');
+  }
+
+  const id = `msg_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
+  const now = new Date().toISOString();
+
+  db.prepare(`
+    INSERT INTO chat_messages (id, channel_id, user_id, user_name, user_role, content, is_pinned, is_hidden, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, 0, 0, ?)
+  `).run(
+    id,
+    data.channelId,
+    data.userId,
+    data.userName,
+    data.userRole,
+    cleanContent,
+    now
+  );
+
+  return {
+    id,
+    channelId: data.channelId,
+    userId: data.userId,
+    userName: data.userName,
+    userRole: data.userRole,
+    content: cleanContent,
+    isPinned: false,
+    isHidden: false,
+    createdAt: now,
+  };
+}
+
+export function moderateChatMessage(
+  messageId: string,
+  action: 'hide' | 'unhide' | 'pin' | 'unpin',
+  adminUserId: string
+): boolean {
+  const db = getDb();
+  const msg = db.prepare('SELECT * FROM chat_messages WHERE id = ?').get(messageId) as any;
+  if (!msg) return false;
+
+  if (action === 'hide') {
+    db.prepare('UPDATE chat_messages SET is_hidden = 1, hidden_by = ? WHERE id = ?').run(adminUserId, messageId);
+    logSecurityEvent({
+      eventType: 'CHAT_MESSAGE_MODERATED',
+      severity: 'WARN',
+      userId: adminUserId,
+      route: '/api/chat/moderate',
+      details: `Mensaje ${messageId} en canal ${msg.channel_id} ocultado por moderación docente.`,
+    });
+  } else if (action === 'unhide') {
+    db.prepare('UPDATE chat_messages SET is_hidden = 0, hidden_by = NULL WHERE id = ?').run(messageId);
+  } else if (action === 'pin') {
+    db.prepare('UPDATE chat_messages SET is_pinned = 1 WHERE id = ?').run(messageId);
+    logSecurityEvent({
+      eventType: 'CHAT_MESSAGE_PINNED',
+      severity: 'INFO',
+      userId: adminUserId,
+      route: '/api/chat/moderate',
+      details: `Mensaje ${messageId} fijado en canal ${msg.channel_id} por el docente.`,
+    });
+  } else if (action === 'unpin') {
+    db.prepare('UPDATE chat_messages SET is_pinned = 0 WHERE id = ?').run(messageId);
+  }
+
+  return true;
 }

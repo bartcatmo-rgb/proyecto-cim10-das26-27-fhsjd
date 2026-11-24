@@ -335,6 +335,14 @@ export interface SecurityKPIs {
   totalEvents: number;
 }
 
+export interface SecurityAlertChannelsStatus {
+  emailConfigured: boolean;
+  telegramConfigured: boolean;
+  webhookConfigured: boolean;
+  channelsCount: number;
+  lastAlertTimestamp?: string;
+}
+
 export interface SecurityEnvironmentStatus {
   dataEncryptionKeyConfigured: boolean;
   sessionSecretConfigured: boolean;
@@ -349,6 +357,34 @@ export interface SecurityEnvironmentStatus {
   databaseEngine: string;
   aiPromptSanitizationActive: boolean;
   globalSessionVersion: number;
+  alertChannels: SecurityAlertChannelsStatus;
+}
+
+// -------------------------------------------------------------
+// CHAT DE AULA Y COMUNICACIÓN DOCENTE
+// -------------------------------------------------------------
+
+export interface ChatChannel {
+  id: string;
+  name: string;
+  description: string;
+  courseId: string;
+  isAnnouncementOnly: boolean;
+  createdAt: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  channelId: string;
+  userId: string;
+  userName: string;
+  userRole: 'student' | 'admin';
+  userAvatarSeed?: string;
+  content: string;
+  isPinned: boolean;
+  isHidden: boolean;
+  hiddenBy?: string;
+  createdAt: string;
 }
 
 export interface SecurityTimelineBucket {

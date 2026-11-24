@@ -250,6 +250,32 @@ CREATE TABLE IF NOT EXISTS system_security_settings (
   updated_at TEXT NOT NULL
 );
 
+-- Dashboard de Comunicación / Chat de Aula (Alumnos ↔ Profesores)
+CREATE TABLE IF NOT EXISTS chat_channels (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  description TEXT,
+  course_id TEXT NOT NULL DEFAULT 'DAS-26-27',
+  is_announcement_only INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (course_id) REFERENCES academic_courses(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS chat_messages (
+  id TEXT PRIMARY KEY,
+  channel_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  user_name TEXT NOT NULL,
+  user_role TEXT NOT NULL DEFAULT 'student',
+  content TEXT NOT NULL,
+  is_pinned INTEGER NOT NULL DEFAULT 0,
+  is_hidden INTEGER NOT NULL DEFAULT 0,
+  hidden_by TEXT,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY (channel_id) REFERENCES chat_channels(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 -- Arquitectura Multi-Tema: Gestión de Temarios y Contenidos Educativos
 CREATE TABLE IF NOT EXISTS topics (
   id TEXT PRIMARY KEY,
@@ -350,4 +376,7 @@ CREATE INDEX IF NOT EXISTS idx_topic_summaries_topic ON topic_summaries(topic_id
 CREATE INDEX IF NOT EXISTS idx_topic_questions_topic ON topic_questions(topic_id, question_type);
 CREATE INDEX IF NOT EXISTS idx_topic_study_progress_user ON topic_study_progress(user_id, topic_id);
 CREATE INDEX IF NOT EXISTS idx_topic_test_attempts_user ON topic_test_attempts(user_id, topic_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_chat_messages_channel ON chat_messages(channel_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_chat_messages_user ON chat_messages(user_id);
+CREATE INDEX IF NOT EXISTS idx_chat_channels_course ON chat_channels(course_id);
 `;

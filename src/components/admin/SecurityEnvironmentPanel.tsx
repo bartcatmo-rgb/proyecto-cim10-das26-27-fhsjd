@@ -25,6 +25,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Info,
+  BellRing,
 } from 'lucide-react';
 import { User, SecurityOverviewResponse, SecurityAuditLog } from '@/types';
 
@@ -53,6 +54,10 @@ export default function SecurityEnvironmentPanel({ adminUser }: Props) {
 
   // Export state
   const [isExporting, setIsExporting] = useState(false);
+
+  // Test Alert state
+  const [isTestingAlert, setIsTestingAlert] = useState(false);
+  const [testAlertMessage, setTestAlertMessage] = useState<string | null>(null);
 
   // Fetch overview data from API
   const fetchOverview = async (page = currentPage) => {
@@ -154,6 +159,30 @@ export default function SecurityEnvironmentPanel({ adminUser }: Props) {
     }
   };
 
+  // Test Alert handler
+  const handleTestAlert = async () => {
+    try {
+      setIsTestingAlert(true);
+      setError(null);
+      const res = await fetch('/api/admin/security/actions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'TEST_ALERT' }),
+      });
+      const resData = await res.json();
+      if (!res.ok) {
+        throw new Error(resData.error || 'Fallo al disparar alerta de prueba.');
+      }
+      setTestAlertMessage(resData.message || 'Prueba de alerta procesada correctamente.');
+      setTimeout(() => setTestAlertMessage(null), 8000);
+      fetchOverview(currentPage);
+    } catch (err: any) {
+      setError(err.message || 'Error al solicitar prueba de alerta.');
+    } finally {
+      setIsTestingAlert(false);
+    }
+  };
+
   const kpis = timeWindow === '24h' ? data?.kpis24h : data?.kpis7d;
 
   // Render SVG Timeline graph
@@ -224,6 +253,17 @@ export default function SecurityEnvironmentPanel({ adminUser }: Props) {
 
               <button
                 type="button"
+                onClick={handleTestAlert}
+                disabled={isTestingAlert}
+                title="Probar Alertas de Intrusión (Telegram / Webhook / Email)"
+                className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold shadow-lg shadow-amber-600/30 transition-all disabled:opacity-50"
+              >
+                <BellRing className={`w-4 h-4 ${isTestingAlert ? 'animate-bounce' : ''}`} />
+                <span className="hidden sm:inline">Probar Alerta Admin</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={handleExportDPD}
                 disabled={isExporting}
                 title="Exportar Registro de Auditoría para el DPD (RGPD / APDCAT)"
@@ -251,6 +291,14 @@ export default function SecurityEnvironmentPanel({ adminUser }: Props) {
           <div className="mt-4 p-3.5 bg-rose-500/20 border border-rose-500/40 rounded-xl text-xs text-rose-200 flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-rose-400 shrink-0" />
             <span>{revokeSuccessMessage}</span>
+          </div>
+        )}
+
+        {/* Test Alert Notification */}
+        {testAlertMessage && (
+          <div className="mt-4 p-3.5 bg-amber-500/20 border border-amber-500/40 rounded-xl text-xs text-amber-200 flex items-center gap-2">
+            <BellRing className="w-4 h-4 text-amber-400 shrink-0" />
+            <span>{testAlertMessage}</span>
           </div>
         )}
 
@@ -370,6 +418,58 @@ export default function SecurityEnvironmentPanel({ adminUser }: Props) {
             <p className="text-[11px] text-slate-500">
               HSTS 2 años, CSP estricto, nosniff, DENY y versión de sesión global sincronizada en base de datos.
             </p>
+          </div>
+        </div>
+
+        {/* Card 7: Canales de Alerta 100% Gratuitos */}
+        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-start gap-3.5 sm:col-span-2 lg:col-span-3">
+          <div className="p-2.5 bg-rose-50 text-rose-600 rounded-xl">
+            <BellRing className="w-5 h-5" />
+          </div>
+          <div className="space-y-1.5 flex-1">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <h3 className="text-xs font-bold text-slate-800">Alertas de Intrusión 100% Gratuitas (Push / Webhook / Email)</h3>
+                <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${
+                  (data?.environment.alertChannels?.channelsCount || 0) > 0
+                    ? 'bg-emerald-100 text-emerald-800'
+                    : 'bg-slate-100 text-slate-600'
+                }`}>
+                  {(data?.environment.alertChannels?.channelsCount || 0) > 0
+                    ? `${data?.environment.alertChannels?.channelsCount} canal(es) activo(s)`
+                    : 'Modo pasivo (sin canales)'}
+                </span>
+              </div>
+              <span className="text-[10px] text-slate-400 font-medium">Timeout 4s · Cooldown 10m · Cero SMS / Coste 0 €</span>
+            </div>
+            <div className="flex flex-wrap gap-2 text-[10px]">
+              <span className={`px-2.5 py-1 rounded-lg font-mono flex items-center gap-1.5 ${
+                data?.environment.alertChannels?.telegramConfigured
+                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold'
+                  : 'bg-slate-50 text-slate-400 border border-slate-200'
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${data?.environment.alertChannels?.telegramConfigured ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+                Telegram Bot: {data?.environment.alertChannels?.telegramConfigured ? 'ACTIVO (Móvil Instantáneo)' : 'NO CONFIGURADO'}
+              </span>
+
+              <span className={`px-2.5 py-1 rounded-lg font-mono flex items-center gap-1.5 ${
+                data?.environment.alertChannels?.webhookConfigured
+                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold'
+                  : 'bg-slate-50 text-slate-400 border border-slate-200'
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${data?.environment.alertChannels?.webhookConfigured ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+                Webhook / ntfy: {data?.environment.alertChannels?.webhookConfigured ? 'ACTIVO' : 'NO CONFIGURADO'}
+              </span>
+
+              <span className={`px-2.5 py-1 rounded-lg font-mono flex items-center gap-1.5 ${
+                data?.environment.alertChannels?.emailConfigured
+                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold'
+                  : 'bg-slate-50 text-slate-400 border border-slate-200'
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${data?.environment.alertChannels?.emailConfigured ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+                Email (Resend/SMTP): {data?.environment.alertChannels?.emailConfigured ? 'ACTIVO' : 'NO CONFIGURADO'}
+              </span>
+            </div>
           </div>
         </div>
       </div>

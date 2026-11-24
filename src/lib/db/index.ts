@@ -182,6 +182,68 @@ export function initDb(db: Database.Database): void {
       db.prepare("INSERT INTO system_security_settings (key, value, updated_at) VALUES ('global_session_version', '1', ?)").run(new Date().toISOString());
     }
 
+    // Tables: chat_channels and chat_messages
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS chat_channels (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        description TEXT,
+        course_id TEXT NOT NULL DEFAULT 'DAS-26-27',
+        is_announcement_only INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (course_id) REFERENCES academic_courses(id) ON DELETE CASCADE
+      );
+
+      CREATE TABLE IF NOT EXISTS chat_messages (
+        id TEXT PRIMARY KEY,
+        channel_id TEXT NOT NULL,
+        user_id TEXT NOT NULL,
+        user_name TEXT NOT NULL,
+        user_role TEXT NOT NULL DEFAULT 'student',
+        content TEXT NOT NULL,
+        is_pinned INTEGER NOT NULL DEFAULT 0,
+        is_hidden INTEGER NOT NULL DEFAULT 0,
+        hidden_by TEXT,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (channel_id) REFERENCES chat_channels(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_chat_messages_channel ON chat_messages(channel_id, created_at);
+      CREATE INDEX IF NOT EXISTS idx_chat_messages_user ON chat_messages(user_id);
+      CREATE INDEX IF NOT EXISTS idx_chat_channels_course ON chat_channels(course_id);
+    `);
+
+    // Seed default channels if empty
+    const channelsCount = (db.prepare('SELECT COUNT(*) as count FROM chat_channels').get() as { count: number }).count;
+    if (channelsCount === 0) {
+      const nowIso = new Date().toISOString();
+      const insertChan = db.prepare(`
+        INSERT INTO chat_channels (id, name, description, course_id, is_announcement_only, created_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `);
+      insertChan.run('general-das26-27', 'General DAS 26/27', 'Canal principal del grupo para consultas y debate clínico', 'DAS-26-27', 0, nowIso);
+      insertChan.run('tutorias-consultas', 'Tutorías y Dudas Docentes', 'Atención directa con el profesorado de codificación', 'DAS-26-27', 0, nowIso);
+      insertChan.run('casos-clinicos-cim10', 'Casos Clínicos CIM-10', 'Discusión técnica de diagnósticos, lateralidad y reglas', 'DAS-26-27', 0, nowIso);
+      insertChan.run('avisos-oficiales', 'Avisos Oficiales (Docencia)', 'Canal unidireccional de anuncios de la coordinación', 'DAS-26-27', 1, nowIso);
+
+      // Welcome message
+      db.prepare(`
+        INSERT INTO chat_messages (id, channel_id, user_id, user_name, user_role, content, is_pinned, is_hidden, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        'msg_welcome_seed',
+        'general-das26-27',
+        'admin-1',
+        'Coordinación Docente FHSJD',
+        'admin',
+        '¡Bienvenidos al Canal de Comunicación de AulaCIM-10! Espacio para consultas de codificación clínica, dudas de exámenes MEAP y anuncios oficiales de la coordinación.',
+        1,
+        0,
+        nowIso
+      );
+    }
+
     // Table: notices
     runColumnMigration('notices', 'is_pinned', 'INTEGER NOT NULL DEFAULT 0');
     runColumnMigration('notices', 'course_id', 'TEXT');

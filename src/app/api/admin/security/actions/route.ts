@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/auth/session';
 import { rotateGlobalSessionVersion, exportSecurityAuditLogs, logSecurityEvent } from '@/lib/db/queries';
 import { extractClientIp, summarizeUserAgent } from '@/lib/security-telemetry';
+import { sendTestIntrusionAlert } from '@/lib/security/intrusion-alerts';
 
 export async function POST(req: NextRequest) {
   const ip = extractClientIp(req);
@@ -42,6 +43,26 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         success: true,
         ...exportData,
+      });
+    }
+
+    if (action === 'TEST_ALERT') {
+      const testResult = await sendTestIntrusionAlert(admin.username);
+
+      logSecurityEvent({
+        eventType: 'TEST_ADMIN_INTRUSION_ALERT',
+        severity: 'INFO',
+        userId: admin.id,
+        route: '/api/admin/security/actions',
+        ipAddress: ip,
+        userAgent: ua || undefined,
+        details: `Prueba diagnóstica de alerta ejecutada por ${admin.username}. Resultado: ${testResult.success ? 'ENVIADA' : 'FALLIDA'} (${testResult.message}).`,
+      });
+
+      return NextResponse.json({
+        success: testResult.success,
+        message: testResult.message,
+        channels: testResult.channels,
       });
     }
 

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserByUsername, getUserByDni, logSecurityEvent } from '@/lib/db/queries';
+import { getDb } from '@/lib/db';
+import { ensureCoreAccountsInDb } from '@/lib/auth/core-accounts';
 import { verifyPassword } from '@/lib/auth/crypto';
 import { setSessionCookie } from '@/lib/auth/session';
 import { checkRateLimit } from '@/lib/auth/rate-limit';
@@ -43,6 +45,22 @@ export async function POST(req: NextRequest) {
       const byDni = getUserByDni(cleanIdentifier);
       if (byDni) {
         user = getUserByUsername(byDni.username);
+      }
+    }
+
+    // Si no se encuentra, asegurar idempotentemente las cuentas maestras institucionales y reintentar
+    if (!user) {
+      try {
+        ensureCoreAccountsInDb(getDb());
+        user = getUserByUsername(cleanIdentifier);
+        if (!user) {
+          const byDni = getUserByDni(cleanIdentifier);
+          if (byDni) {
+            user = getUserByUsername(byDni.username);
+          }
+        }
+      } catch (coreSeedErr) {
+        console.warn('Fallback core accounts check notice:', coreSeedErr);
       }
     }
 

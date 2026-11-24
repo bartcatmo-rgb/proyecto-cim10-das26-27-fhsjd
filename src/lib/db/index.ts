@@ -7,6 +7,7 @@ import { SEED_100_MEAP_QUESTIONS } from './seed-meap-100';
 import { SEED_REVERSE_CODING_CASES } from './seed-reverse-coding';
 import { hashPassword } from '../auth/crypto';
 import { encryptField, computeBlindIndex } from '../field-crypto';
+import { ensureCoreAccountsInDb } from '../auth/core-accounts';
 
 let dbInstance: Database.Database | null = null;
 let isInitialized = false;
@@ -420,6 +421,13 @@ export function initDb(db: Database.Database): void {
     }
   } catch (localSeedErr) {
     console.warn('Seed loader note:', localSeedErr);
+  }
+
+  // 2c. Idempotent Core Institutional Accounts Seeding (admin.fhsjd, docente.fhsjd, alumno1.fhsjd)
+  try {
+    ensureCoreAccountsInDb(db);
+  } catch (coreAccountsErr) {
+    console.warn('Core institutional accounts seeding note:', coreAccountsErr);
   }
 
   // 3. Check and seed CIM-10 catalog if count == 0

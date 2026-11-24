@@ -1,5 +1,6 @@
 import { CIM10Code, Question, Notice } from '@/types';
 import { hashPassword } from '../auth/crypto';
+import { CORE_ACCOUNTS, getCoreAccountPassword } from '../auth/core-accounts';
 
 export interface SeedUser {
   id: string;
@@ -55,6 +56,19 @@ export const SEED_USERS: SeedUser[] = [
     canSwitchRole: false,
     mustChangePassword: true,
   },
+  ...CORE_ACCOUNTS.map((acc) => ({
+    id: acc.id,
+    username: acc.username,
+    fullName: acc.fullName,
+    dniNie: acc.dniNie,
+    email: acc.email,
+    phone: acc.phone,
+    academicGroup: acc.academicGroup,
+    role: acc.role,
+    password: getCoreAccountPassword(acc),
+    canSwitchRole: acc.canSwitchRole,
+    mustChangePassword: acc.mustChangePassword,
+  })),
 ];
 
 export const SEED_CIM10_CODES: Omit<CIM10Code, 'id'>[] = [

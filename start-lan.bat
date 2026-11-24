@@ -82,12 +82,21 @@ if "%LAN_IP%"=="127.0.0.1" (
 
 :IP_RESOLVED
 
+:: Deteccion de resolucion y factor de escala de pantalla
+for /f "tokens=1,2" %%A in ('powershell -NoProfile -Command "Add-Type -AssemblyName System.Windows.Forms; $s=[System.Windows.Forms.Screen]::PrimaryScreen.Bounds; Write-Output ($s.Width.ToString() + ' ' + $s.Height.ToString())" 2^>nul') do (
+    set "DISP_W=%%A"
+    set "DISP_H=%%B"
+)
+
 echo.
 echo ====================================================================
 echo   SERVIDOR LAN LISTO - PUERTO SELECCIONADO: %TARGET_PORT%
 echo --------------------------------------------------------------------
 echo   [PC Docente / Local]: http://localhost:%TARGET_PORT%
 echo   [Alumnos en el Aula]: http://%LAN_IP%:%TARGET_PORT%
+if defined DISP_W (
+echo   [Pantalla Principal]: %DISP_W%x%DISP_H% (Escala adaptativa fluida)
+)
 echo.
 echo   Para detener el servidor presiona Ctrl + C
 echo ====================================================================

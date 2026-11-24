@@ -25,12 +25,12 @@ export default async function RootLayout({
   return (
     <html lang="es">
       <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
       </head>
-      <body className="bg-slate-50 text-slate-900 min-h-screen flex flex-col font-sans">
+      <body className="bg-slate-50 text-slate-900 min-h-[100dvh] flex flex-col font-sans w-full max-w-full overflow-x-hidden">
         <EnvironmentBanner />
         <Navbar user={user} />
-        <main className="flex-1">
+        <main className="flex-1 w-full max-w-full overflow-x-hidden">
           {children}
         </main>
         <Footer />

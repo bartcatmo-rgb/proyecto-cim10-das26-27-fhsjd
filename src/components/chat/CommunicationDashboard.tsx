@@ -250,7 +250,7 @@ export default function CommunicationDashboard({ user }: Props) {
       )}
 
       {/* 2. Main Chat Layout: Channels Sidebar + Messages Area */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 min-h-[580px]">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 min-h-[480px] lg:min-h-[clamp(520px,65vh,780px)]">
         {/* Left Column: Channels List */}
         <div className="lg:col-span-1 bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-4 flex flex-col">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -378,7 +378,7 @@ export default function CommunicationDashboard({ user }: Props) {
           )}
 
           {/* Messages Stream */}
-          <div className="flex-1 p-5 overflow-y-auto space-y-4 max-h-[460px] min-h-[300px]">
+          <div className="flex-1 p-5 overflow-y-auto space-y-4 max-h-[clamp(360px,55vh,650px)] min-h-[260px]">
             {loadingMessages && messages.length === 0 ? (
               <div className="py-20 text-center text-xs text-slate-400">
                 <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-brand-600" />

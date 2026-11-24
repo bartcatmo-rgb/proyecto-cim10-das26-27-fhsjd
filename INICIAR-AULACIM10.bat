@@ -30,6 +30,15 @@ if not exist "%~dp0data\" (
     mkdir "%~dp0data"
 )
 
+:: 3. Deteccion de resolucion y factor de escala de pantalla
+for /f "tokens=1,2" %%A in ('powershell -NoProfile -Command "Add-Type -AssemblyName System.Windows.Forms; $s=[System.Windows.Forms.Screen]::PrimaryScreen.Bounds; Write-Output ($s.Width.ToString() + ' ' + $s.Height.ToString())" 2^>nul') do (
+    set "DISP_W=%%A"
+    set "DISP_H=%%B"
+)
+if defined DISP_W (
+    echo [OK] Pantalla principal: !DISP_W!x!DISP_H! (Modo adaptativo 100dvh y escala fluida activos)
+)
+
 :: 3. Generar automaticamente secretos criptograficos locales si no existen
 if not exist "%~dp0.session_secret" (
     echo [INFO] Inicializando secretos criptograficos locales seguros (AES-256 / HMAC)...

@@ -153,7 +153,7 @@ export default function LearningPerformanceChart() {
           {hasPoints ? (
             <svg
               viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-              className="w-full h-auto min-w-[550px] select-none"
+              className="w-full h-auto select-none block"
               style={{ maxHeight: '260px' }}
             >
               <defs>

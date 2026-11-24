@@ -3,6 +3,7 @@ import './globals.css';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import EnvironmentBanner from '@/components/EnvironmentBanner';
+import SessionLifecycleManager from '@/components/SessionLifecycleManager';
 import { getCurrentUser } from '@/lib/auth/session';
 
 export const dynamic = 'force-dynamic';
@@ -33,6 +34,7 @@ export default async function RootLayout({
         <main className="flex-1 w-full max-w-full overflow-x-hidden">
           {children}
         </main>
+        <SessionLifecycleManager user={user} />
         <Footer />
       </body>
     </html>

@@ -384,7 +384,7 @@ export default function UserManagerPanel() {
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
+      <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-3 flex-1 min-w-[280px]">
           <div className="relative flex-1 max-w-sm">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -450,7 +450,7 @@ export default function UserManagerPanel() {
       </div>
 
       {/* Users Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden max-h-[calc(100vh-270px)] overflow-y-auto">
         {loading ? (
           <div className="p-12 text-center">
             <Loader2 className="w-8 h-8 animate-spin text-indigo-600 mx-auto mb-2" />
@@ -470,13 +470,13 @@ export default function UserManagerPanel() {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                  <th className="py-3 px-4">Usuario / DNI</th>
-                  <th className="py-3 px-4">Nombre Completo</th>
-                  <th className="py-3 px-4">Roles Activos</th>
-                  <th className="py-3 px-4">Materia / Aula</th>
-                  <th className="py-3 px-4">Estado</th>
-                  <th className="py-3 px-4 text-right">Acciones</th>
+                <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-500 uppercase tracking-wider sticky top-0 z-10">
+                  <th className="py-2 px-3">Usuario / DNI</th>
+                  <th className="py-2 px-3">Nombre Completo</th>
+                  <th className="py-2 px-3">Roles Activos</th>
+                  <th className="py-2 px-3">Materia / Aula</th>
+                  <th className="py-2 px-3">Estado</th>
+                  <th className="py-2 px-3 text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs text-slate-700">

@@ -38,194 +38,172 @@ export default async function HomePage() {
   const isDocenteOrAdmin = user.role === 'admin' || user.activeRole === 'admin';
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-4 space-y-4">
       
-      {/* Hero Banner */}
-      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-brand-950 to-slate-900 text-white p-8 sm:p-10 shadow-xl border border-slate-800">
+      {/* Hero Banner Compact */}
+      <section className="relative overflow-hidden rounded-xl bg-gradient-to-r from-slate-900 via-brand-950 to-slate-900 text-white p-4 sm:p-5 shadow-lg border border-slate-800">
         <div className="relative z-10 max-w-3xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-brand-500/20 text-brand-300 border border-brand-500/30 mb-4">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Curso 2026/2027 · Fundación Hospital San Juan de Dios</span>
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-brand-500/20 text-brand-300 border border-brand-500/30 mb-2">
+            <Sparkles className="w-3 h-3" />
+            <span>Curso 2026/2027 · Fundación Hospital San Juan de Dios · CFGS DAS</span>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
-            AulaCIM-10 · FHSJD <span className="text-brand-400 font-medium">(DAS 26/27)</span>
+          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white">
+            AulaCIM-10 · FHSJD <span className="text-brand-400 font-semibold">(DAS 26/27)</span>
           </h1>
 
-          <p className="mt-3 text-base sm:text-lg text-slate-300 leading-relaxed">
-            Plataforma docente especializada en <strong className="text-white">Codificación Clínica CIM-10</strong> bajo el modelo <strong className="text-white">MEAP</strong>. Entrena casos reales divididos por ámbitos asistenciales, escala a través de los 5 niveles progresivos y perfecciona tus criterios de selección de Diagnóstico Principal.
+          <p className="mt-1.5 text-xs sm:text-sm text-slate-300 leading-snug">
+            Plataforma docente de <strong className="text-white">Codificación Clínica CIM-10</strong> bajo el modelo <strong className="text-white">MEAP</strong>. Entrena casos reales divididos por ámbitos asistenciales, escala en 5 niveles y perfecciona criterios diagnósticos.
           </p>
 
-          <div className="mt-6 flex flex-wrap gap-3">
+          <div className="mt-3 flex flex-wrap gap-2">
             <Link
               href="/entrenamiento"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold bg-brand-500 hover:bg-brand-400 text-slate-950 transition-all shadow-md shadow-brand-500/20"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold bg-brand-500 hover:bg-brand-400 text-slate-950 transition-all shadow-xs"
             >
-              <Award className="w-4 h-4" />
+              <Award className="w-3.5 h-3.5" />
               <span>Entrenar Casos Clínicos</span>
             </Link>
 
             {user && errorSynthesis && errorSynthesis.totalMistakes > 0 && (
               <Link
                 href="/test/repaso"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-rose-600/90 hover:bg-rose-500 text-white transition-all border border-rose-500/40"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-600/90 hover:bg-rose-500 text-white transition-all border border-rose-500/40"
               >
-                <AlertCircle className="w-4 h-4" />
+                <AlertCircle className="w-3.5 h-3.5" />
                 <span>Repasar {errorSynthesis.totalMistakes} Fallos</span>
               </Link>
             )}
 
             <Link
               href="/catalogo"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all"
             >
-              <FileSpreadsheet className="w-4 h-4" />
-              <span>Buscador Catálogo CIM-10</span>
+              <FileSpreadsheet className="w-3.5 h-3.5" />
+              <span>Buscador Catálogo</span>
             </Link>
 
             <Link
               href="/examenes-realizados"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all"
             >
-              <History className="w-4 h-4" />
-              <span>Exámenes del Curso</span>
+              <History className="w-3.5 h-3.5" />
+              <span>Pruebas Realizadas</span>
             </Link>
 
             <Link
               href="/manuales"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all"
             >
-              <BookOpen className="w-4 h-4" />
+              <BookOpen className="w-3.5 h-3.5" />
               <span>Manuales</span>
             </Link>
 
             {isDocenteOrAdmin && (
               <Link
                 href="/presentacion"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-purple-950/80 hover:bg-purple-900 text-purple-200 border border-purple-700/60 transition-all shadow-sm"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-purple-950/90 hover:bg-purple-900 text-purple-200 border border-purple-700/60 transition-all shadow-xs"
               >
-                <Tv className="w-4 h-4 text-purple-400" />
-                <span>Presentación Programa (Voz Neural)</span>
+                <Tv className="w-3.5 h-3.5 text-purple-400" />
+                <span>Presentación (Cinemática Dinámica)</span>
               </Link>
             )}
 
             <Link
               href="/chat"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-indigo-950/80 hover:bg-indigo-900 text-indigo-300 border border-indigo-700/60 transition-all shadow-sm"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-950/90 hover:bg-indigo-900 text-indigo-300 border border-indigo-700/60 transition-all shadow-xs"
             >
-              <MessageSquare className="w-4 h-4" />
-              <span>Chat de Aula / Consultas</span>
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span>Chat de Aula</span>
             </Link>
           </div>
         </div>
 
         <div className="absolute right-0 bottom-0 translate-x-12 translate-y-12 opacity-10 pointer-events-none hidden lg:block">
-          <Stethoscope className="w-96 h-96 text-brand-400" />
+          <Stethoscope className="w-64 h-64 text-brand-400" />
         </div>
       </section>
 
       {/* Active Exam del Día Alert Banner */}
       {activeExam?.isActive && (
-        <section className="bg-gradient-to-r from-emerald-900 via-teal-950 to-slate-900 text-white rounded-2xl p-6 sm:p-7 shadow-lg border border-emerald-500/30 flex flex-wrap items-center justify-between gap-6">
-          <div className="space-y-2 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 uppercase tracking-widest">
-              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+        <section className="bg-gradient-to-r from-emerald-900 via-teal-950 to-slate-900 text-white rounded-xl p-3.5 sm:p-4 shadow-md border border-emerald-500/30 flex flex-wrap items-center justify-between gap-3">
+          <div className="space-y-1 max-w-2xl">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 uppercase tracking-widest">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
               CONVOCATORIA ACTIVA · EXAMEN DEL DÍA
             </div>
-            <h2 className="text-xl sm:text-2xl font-bold">{activeExam.title}</h2>
-            <div className="flex flex-wrap gap-4 text-xs text-emerald-100">
+            <h2 className="text-base sm:text-lg font-bold">{activeExam.title}</h2>
+            <div className="flex flex-wrap gap-3 text-xs text-emerald-100">
               <span>Ámbito: <strong>{DISCIPLINE_CATALOG[activeExam.discipline]?.name || activeExam.discipline}</strong></span>
               <span>Dificultad: <strong>{activeExam.level === 0 ? 'Adaptativo IA' : `Nivel ${activeExam.level}`}</strong></span>
               <span>Casos: <strong>{activeExam.questionCount} preguntas</strong></span>
-              <span>Tiempo: <strong>{activeExam.timeLimitMinutes > 0 ? `${activeExam.timeLimitMinutes} minutos` : 'Sin límite'}</strong></span>
+              <span>Tiempo: <strong>{activeExam.timeLimitMinutes > 0 ? `${activeExam.timeLimitMinutes} min` : 'Sin límite'}</strong></span>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <Link
               href={
                 activeExam.level === 0
                   ? `/test/adaptativo?discipline=${activeExam.discipline}&count=${activeExam.questionCount}&examId=${activeExam.id}&timeLimit=${activeExam.timeLimitMinutes}`
                   : `/test/${activeExam.discipline}/${activeExam.level}?examId=${activeExam.id}&timeLimit=${activeExam.timeLimitMinutes}`
               }
-              className="px-6 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm rounded-xl shadow-md transition-all flex items-center gap-2"
+              className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-lg shadow-sm transition-all flex items-center gap-1.5"
             >
               <span>Comenzar Examen Oficial</span>
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
         </section>
       )}
 
-      {/* Adaptive Mode Promotion Card */}
-      <section className="bg-gradient-to-r from-indigo-900 via-brand-900 to-purple-950 text-white rounded-2xl p-6 sm:p-7 shadow-md border border-indigo-500/20 flex flex-wrap items-center justify-between gap-6">
-        <div className="space-y-1.5 max-w-2xl">
-          <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-bold bg-white/10 text-amber-300 border border-white/10">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>NUEVO · MOTOR ADAPTATIVO DINÁMICO IA</span>
-          </div>
-          <h2 className="text-lg sm:text-xl font-bold">Entrenamiento Inteligente Personalizado</h2>
-          <p className="text-xs sm:text-sm text-indigo-100 leading-relaxed">
-            Nuestra IA analiza tus fallos históricos y genera un test a medida con la Fórmula de Oro (60% refuerzo en fallos habituales, 25% reto de progresión y 15% consolidación).
-          </p>
-        </div>
-
-        <Link
-          href="/test/adaptativo"
-          className="px-5 py-2.5 bg-white text-brand-950 hover:bg-slate-100 font-bold text-xs rounded-xl shadow transition-colors flex items-center gap-2"
-        >
-          <span>Iniciar Test Adaptativo</span>
-          <ArrowRight className="w-3.5 h-3.5" />
-        </Link>
-      </section>
-
-      {/* 2 New Interactive Modalities: Codificación Inversa & Ronda Tipo Kahoot */}
-      <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* 2 Modalities: Codificación Inversa & Ronda Tipo Kahoot (Compact Cards) */}
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
         {/* Card 1: Codificación Inversa */}
-        <div className="bg-gradient-to-br from-amber-50 to-orange-50/50 rounded-2xl border-2 border-amber-200/80 p-6 sm:p-7 shadow-sm flex flex-col justify-between space-y-4">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-200">
-              <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
-              <span>NUEVA MODALIDAD · AUDITORÍA CLÍNICA</span>
+        <div className="bg-gradient-to-br from-amber-50 to-orange-50/50 rounded-xl border border-amber-200/80 p-3.5 sm:p-4 shadow-xs flex flex-col justify-between space-y-2.5">
+          <div className="space-y-1">
+            <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-200">
+              <ShieldAlert className="w-3 h-3 text-amber-600" />
+              <span>AUDITORÍA CLÍNICA</span>
             </div>
-            <h3 className="text-lg font-bold text-slate-900">
+            <h3 className="text-sm font-bold text-slate-900">
               Codificación Inversa: Detección y Corrección
             </h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Enfrenta casos clínicos con una codificación inicial propuesta que contiene un fallo intencionado (lateralidad, complicación omitida, Excluye 1 o 7º carácter). Identifica el error y asigna el código oficial correcto.
+            <p className="text-xs text-slate-600 leading-normal">
+              Detecta fallos intencionados (lateralidad, complicación, 7º carácter) y asigna el código correcto.
             </p>
           </div>
 
           <Link
             href="/test/inversa"
-            className="inline-flex items-center justify-between px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl shadow-sm transition-colors"
+            className="inline-flex items-center justify-between px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-lg shadow-2xs transition-colors"
           >
             <span>Iniciar Auditoría Inversa</span>
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
 
         {/* Card 2: Ronda Tipo Kahoot */}
-        <div className="bg-gradient-to-br from-purple-50 to-indigo-50/50 rounded-2xl border-2 border-purple-200/80 p-6 sm:p-7 shadow-sm flex flex-col justify-between space-y-4">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-900 border border-purple-200">
-              <Zap className="w-3.5 h-3.5 fill-purple-600 text-purple-600" />
-              <span>MODALIDAD COMPETITIVA · 10 A 20 PREGUNTAS</span>
+        <div className="bg-gradient-to-br from-purple-50 to-indigo-50/50 rounded-xl border border-purple-200/80 p-3.5 sm:p-4 shadow-xs flex flex-col justify-between space-y-2.5">
+          <div className="space-y-1">
+            <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-900 border border-purple-200">
+              <Zap className="w-3 h-3 fill-purple-600 text-purple-600" />
+              <span>COMPETICIÓN · 10-20 CASOS</span>
             </div>
-            <h3 className="text-lg font-bold text-slate-900">
+            <h3 className="text-sm font-bold text-slate-900">
               Ronda Tipo Kahoot con Podio 1º, 2º y 3º
             </h3>
-            <p className="text-xs text-slate-600 leading-relaxed">
-              Rondas contrarreloj con 25 segundos por caso y 4 botones geométricos. Bonificación por rapidez, rachas consecutivas de acierto y podio visual con trofeo de oro, plata y bronce.
+            <p className="text-xs text-slate-600 leading-normal">
+              Casos contrarreloj con 25 segundos y botones geométricos. Bonificación y podio en vivo.
             </p>
           </div>
 
           <Link
             href="/kahoot"
-            className="inline-flex items-center justify-between px-5 py-2.5 bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs rounded-xl shadow-sm transition-colors"
+            className="inline-flex items-center justify-between px-3.5 py-1.5 bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs rounded-lg shadow-2xs transition-colors"
           >
             <span>Lanzar Ronda Kahoot</span>
-            <Trophy className="w-4 h-4" />
+            <Trophy className="w-3.5 h-3.5" />
           </Link>
         </div>
       </section>

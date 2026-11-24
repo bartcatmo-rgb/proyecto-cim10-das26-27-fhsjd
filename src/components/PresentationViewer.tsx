@@ -24,6 +24,7 @@ import {
   HeartHandshake,
   Download,
   Users,
+  User,
   School,
   FileText,
   MessageSquare,
@@ -332,6 +333,127 @@ const DEFAULT_SCENES: Scene[] = [
   },
 ];
 
+interface CinematicProps {
+  cameraMode: 'classroom' | 'zooming' | 'board';
+  children: React.ReactNode;
+  activeFeature: SystemFeatureItem;
+  onZoomClick: () => void;
+}
+
+function ClassroomCinematicWrapper({
+  cameraMode,
+  children,
+  activeFeature,
+  onZoomClick,
+}: CinematicProps) {
+  if (cameraMode === 'board') {
+    return (
+      <div className="relative rounded-2xl border-4 border-slate-700 bg-slate-950 p-3 sm:p-4 shadow-2xl transition-all duration-500">
+        {/* Pizarra Digital Bezel & Smart Toolbar */}
+        <div className="flex items-center justify-between pb-2 mb-3 border-b border-slate-800 text-[11px] text-slate-400">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="font-bold text-white">Pizarra Digital Interactiva FHSJD · Proyección de Aula</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="px-2 py-0.5 rounded bg-brand-500/20 text-brand-300 font-mono text-[10px] font-bold">
+              1080p · Táctil Activo
+            </span>
+            <div className="flex items-center gap-1 bg-slate-800 px-2 py-0.5 rounded">
+              <span className="w-2 h-2 rounded-full bg-blue-400" title="Rotulador Azul" />
+              <span className="w-2 h-2 rounded-full bg-red-400" title="Puntero Láser" />
+              <span className="w-2 h-2 rounded-full bg-amber-400" title="Marcador" />
+            </div>
+          </div>
+        </div>
+        {children}
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-b from-slate-900 via-slate-800 to-slate-950 border border-slate-700 p-4 min-h-[460px] flex flex-col justify-between shadow-2xl select-none">
+      {/* Dynamic zoom container */}
+      <div
+        className="w-full flex-1 flex flex-col items-center justify-center transition-all duration-1000 ease-out origin-center"
+        style={{
+          transform: cameraMode === 'zooming' ? 'scale(1.7) translateY(-8%)' : 'scale(1) translateY(0)',
+          filter: cameraMode === 'zooming' ? 'contrast(1.05)' : 'none',
+        }}
+      >
+        {/* Institutional Plaque on Front Wall */}
+        <div className="text-center mb-2">
+          <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[10px] font-black bg-brand-900/60 text-brand-200 border border-brand-500/30 uppercase tracking-widest shadow-inner">
+            <School className="w-3 h-3 text-brand-400" />
+            <span>Fundación Hospital San Juan de Dios · Aula Magna DAS 26/27</span>
+          </div>
+        </div>
+
+        {/* Central Whiteboard & Professor Podium */}
+        <div className="w-full max-w-xl relative mx-auto">
+          {/* SmartBoard Frame */}
+          <div className="rounded-xl border-4 border-slate-600 bg-slate-950 p-2 shadow-2xl relative">
+            <div className="flex items-center justify-between text-[9px] text-slate-400 pb-1 border-b border-slate-800 font-mono mb-1.5">
+              <span className="flex items-center gap-1 font-bold text-slate-200">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                PIZARRA DIGITAL · PROYECCIÓN EN VIVO
+              </span>
+              <span className="text-brand-400 font-semibold">{activeFeature.badge}</span>
+            </div>
+
+            {/* Embedded simulation screen inside the board */}
+            <div className="rounded overflow-hidden max-h-[300px] overflow-y-auto">
+              {children}
+            </div>
+          </div>
+
+          {/* Teacher avatar standing next to whiteboard */}
+          <div className="absolute -left-6 bottom-0 hidden sm:flex flex-col items-center pointer-events-none">
+            <div className="bg-purple-950/90 text-purple-200 border border-purple-500/40 text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-md mb-1 animate-bounce">
+              Profesor
+            </div>
+            <div className="w-8 h-16 bg-gradient-to-b from-purple-600 to-indigo-800 rounded-t-full border border-purple-400/40 shadow-lg flex items-center justify-center">
+              <User className="w-5 h-5 text-white" />
+            </div>
+          </div>
+        </div>
+
+        {/* Classroom Rows with Students at Desks */}
+        <div className="w-full mt-4 pt-3 border-t border-slate-700/50 flex items-center justify-around text-slate-400">
+          {[
+            { id: 1, name: 'Laia (48069899Z)', status: 'Codificando MEAP' },
+            { id: 2, name: 'Alumno DAS A', status: 'Verificando Diagnóstico' },
+            { id: 3, name: 'Alumno DAS B', status: 'Atendiendo Explicación' },
+          ].map((student) => (
+            <div key={student.id} className="flex flex-col items-center">
+              <div className="text-[9px] font-bold text-slate-300 bg-slate-800/90 px-2 py-0.5 rounded-full border border-slate-600 mb-1">
+                {student.name}
+              </div>
+              <div className="w-16 h-7 bg-slate-800 border border-slate-600 rounded-t-lg flex items-center justify-center text-[8px] text-teal-300 font-mono shadow-md">
+                💻 AulaCIM
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Floating Action to Trigger Zoom */}
+      {cameraMode === 'classroom' && (
+        <div className="absolute bottom-3 right-3 z-10">
+          <button
+            type="button"
+            onClick={onZoomClick}
+            className="px-3 py-1.5 bg-brand-500 hover:bg-brand-400 text-slate-950 font-black text-xs rounded-xl shadow-lg transition flex items-center gap-1.5 animate-pulse"
+          >
+            <Maximize2 className="w-3.5 h-3.5" />
+            <span>Hacer Zoom a la Pizarra</span>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function PresentationViewer() {
   const [scenes, setScenes] = useState<Scene[]>(DEFAULT_SCENES);
   const [currentSceneIdx, setCurrentSceneIdx] = useState(0);
@@ -344,6 +466,10 @@ export default function PresentationViewer() {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(260); // Duración total estimada ~4m20s
   const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Estados de Cinemática de Dinámica de Clase y Zoom a Pizarra
+  const [cameraMode, setCameraMode] = useState<'classroom' | 'zooming' | 'board'>('classroom');
+  const [autoCinematic, setAutoCinematic] = useState(true);
 
   // Estados interactivos para el simulador de UI
   const [simSelectedOption, setSimSelectedOption] = useState<'A' | 'B' | 'C' | 'D' | null>('B');
@@ -394,6 +520,35 @@ export default function PresentationViewer() {
       audioRef.current.playbackRate = playbackSpeed;
     }
   }, [playbackSpeed]);
+
+  // Cinemática de dinámica de clase: arranca en fondo del aula y hace zoom progresivo a la pizarra
+  useEffect(() => {
+    if (!autoCinematic || !isPlaying) return;
+
+    // 1. Mostrar visión general del fondo del aula
+    setCameraMode('classroom');
+
+    // 2. Transición de zoom progresivo hacia la pizarra digital
+    const zoomTimer = setTimeout(() => {
+      setCameraMode('zooming');
+      // 3. Foco completo en la pizarra digital
+      const boardTimer = setTimeout(() => {
+        setCameraMode('board');
+      }, 1300);
+      return () => clearTimeout(boardTimer);
+    }, Math.round(2800 / playbackSpeed));
+
+    return () => clearTimeout(zoomTimer);
+  }, [currentSceneIdx, isPlaying, autoCinematic, playbackSpeed]);
+
+  const handleCameraChange = (mode: 'classroom' | 'zooming' | 'board') => {
+    if (mode === 'zooming') {
+      setCameraMode('zooming');
+      setTimeout(() => setCameraMode('board'), 1100);
+    } else {
+      setCameraMode(mode);
+    }
+  };
 
   const togglePlay = () => {
     if (!audioRef.current) return;
@@ -461,8 +616,8 @@ export default function PresentationViewer() {
   return (
     <div
       ref={containerRef}
-      className={`space-y-6 transition-colors duration-300 ${
-        isFullscreen ? 'bg-slate-950 p-6 overflow-y-auto min-h-screen text-white' : ''
+      className={`space-y-3.5 transition-colors duration-300 ${
+        isFullscreen ? 'bg-slate-950 p-4 overflow-y-auto min-h-screen text-white' : ''
       }`}
     >
       {/* Elemento de audio para locución neural */}
@@ -488,28 +643,28 @@ export default function PresentationViewer() {
         onError={() => setHasAudioFile(false)}
       />
 
-      {/* CABECERA PRINCIPAL CON ESTADO Y PANTALLA COMPLETA */}
-      <div className="bg-slate-900 text-white p-5 sm:p-6 rounded-2xl border border-slate-800 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="space-y-1.5">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-brand-500/20 text-brand-300 border border-brand-500/30">
-              <ShieldCheck className="w-3.5 h-3.5 text-brand-400" />
+      {/* CABECERA PRINCIPAL COMPACTA CON ESTADO Y PANTALLA COMPLETA */}
+      <div className="bg-slate-900 text-white p-3.5 sm:p-4 rounded-xl border border-slate-800 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div className="space-y-1">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-brand-500/20 text-brand-300 border border-brand-500/30">
+              <ShieldCheck className="w-3 h-3 text-brand-400" />
               <span>Acceso Exclusivo: Claustro Docente y Dirección FHSJD</span>
             </span>
 
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">
               <Gauge className="w-3 h-3 text-purple-400" />
               <span>Ritmo Ágil: {playbackSpeed}x</span>
             </span>
           </div>
 
-          <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight flex items-center gap-2.5">
-            <Tv className="w-6 h-6 text-brand-400 flex-shrink-0" />
+          <h1 className="text-base sm:text-lg font-black text-white tracking-tight flex items-center gap-2">
+            <Tv className="w-5 h-5 text-brand-400 flex-shrink-0" />
             <span>Presentación Interactiva · AulaCIM-10 (DAS 26/27)</span>
           </h1>
 
-          <p className="text-xs sm:text-sm text-slate-300">
-            Explicación detallada y sincronizada de cada función del sistema con simulación visual en vivo y locución neural humana.
+          <p className="text-xs text-slate-300">
+            Explicación sincronizada con cinemática animada de dinamización de clase y simulación en pizarra digital.
           </p>
         </div>
 
@@ -652,26 +807,83 @@ export default function PresentationViewer() {
 
         {/* COLUMNA DERECHA: SIMULADOR VISUAL ANIMADO DE LOS FLUJOS REALES (7 columnas) */}
         <div className="lg:col-span-7 space-y-4">
-          <div className="bg-slate-900 text-white rounded-2xl p-5 border border-slate-800 shadow-xl space-y-4">
-            {/* Cabecera del Simulador */}
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div className="bg-slate-900 text-white rounded-2xl p-4 sm:p-5 border border-slate-800 shadow-xl space-y-3.5">
+            {/* Cabecera del Simulador con Dinámica de Clase y Zoom a Pizarra */}
+            <div className="flex flex-wrap items-center justify-between border-b border-slate-800 pb-2.5 gap-2">
               <div className="flex items-center gap-2">
                 <span className="flex space-x-1.5">
                   <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
                   <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
                 </span>
-                <span className="text-xs text-slate-300 font-mono ml-2">
-                  https://proyecto-cim10-das26-27-fhsjd.vercel.app · Simulación en Vivo
+                <span className="text-xs text-slate-300 font-mono ml-1.5">
+                  Dinámica de Clase · Proyección Pizarra Digital
                 </span>
               </div>
-              <span className="text-[11px] text-emerald-400 font-bold bg-emerald-950/80 px-2.5 py-0.5 rounded-full border border-emerald-800">
-                En ejecución
-              </span>
+
+              {/* Botones de Control de Cámara Cinemática */}
+              <div className="flex flex-wrap items-center gap-1 bg-slate-800/90 p-1 rounded-xl text-xs font-bold">
+                <button
+                  type="button"
+                  onClick={() => handleCameraChange('classroom')}
+                  className={`px-2 py-1 rounded-lg transition flex items-center gap-1 ${
+                    cameraMode === 'classroom'
+                      ? 'bg-brand-500 text-slate-950 font-black shadow-xs'
+                      : 'text-slate-300 hover:text-white'
+                  }`}
+                  title="Vista general desde el fondo del aula"
+                >
+                  <School className="w-3.5 h-3.5" />
+                  <span>Fondo Aula</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleCameraChange('zooming')}
+                  className={`px-2 py-1 rounded-lg transition flex items-center gap-1 ${
+                    cameraMode === 'zooming'
+                      ? 'bg-purple-500 text-white font-black shadow-xs'
+                      : 'text-slate-300 hover:text-white'
+                  }`}
+                  title="Animar zoom progresivo hacia la pizarra digital"
+                >
+                  <Maximize2 className="w-3.5 h-3.5" />
+                  <span>Zoom Pizarra</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleCameraChange('board')}
+                  className={`px-2 py-1 rounded-lg transition flex items-center gap-1 ${
+                    cameraMode === 'board'
+                      ? 'bg-indigo-600 text-white font-black shadow-xs'
+                      : 'text-slate-300 hover:text-white'
+                  }`}
+                  title="Foco directo en la pantalla de la pizarra digital"
+                >
+                  <Tv className="w-3.5 h-3.5" />
+                  <span>Foco Pizarra</span>
+                </button>
+
+                <label className="flex items-center gap-1 ml-1 pl-2 border-l border-slate-700 text-[10px] text-slate-300 font-medium cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={autoCinematic}
+                    onChange={(e) => setAutoCinematic(e.target.checked)}
+                    className="rounded border-slate-600 text-brand-500 w-3 h-3"
+                  />
+                  <span>Auto-zoom</span>
+                </label>
+              </div>
             </div>
 
-            {/* PANTALLA SIMULADA SEGÚN LA FUNCIÓN ACTIVA */}
-            <div className="bg-slate-950 rounded-xl p-4 sm:p-5 border border-slate-800/80 min-h-[380px] flex flex-col justify-center">
+            <ClassroomCinematicWrapper
+              cameraMode={cameraMode}
+              activeFeature={activeFeature}
+              onZoomClick={() => handleCameraChange('zooming')}
+            >
+              {/* PANTALLA SIMULADA SEGÚN LA FUNCIÓN ACTIVA */}
+              <div className="bg-slate-950 rounded-xl p-3 sm:p-4 border border-slate-800/80 min-h-[350px] flex flex-col justify-center">
               {/* 1. SIMULACIÓN LOGIN & ROLES */}
               {activeFeature.simulation === 'login' && (
                 <div className="max-w-md mx-auto w-full bg-slate-900 p-5 rounded-2xl border border-slate-700 shadow-lg space-y-3.5">
@@ -1074,13 +1286,14 @@ export default function PresentationViewer() {
                   <div className="pt-2 text-xs font-bold text-brand-400">Promoción DAS 2026/2027</div>
                 </div>
               )}
-            </div>
+              </div>
+            </ClassroomCinematicWrapper>
           </div>
         </div>
       </div>
 
-      {/* BARRA DE CONTROLES INFERIOR: REPRODUCCIÓN, NAVEGACIÓN Y AVANCE */}
-      <div className="bg-slate-900 text-white p-4 sm:p-5 rounded-2xl border border-slate-800 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* BARRA DE CONTROLES INFERIOR: REPRODUCCIÓN, NAVEGACIÓN Y AVANCE COMPACTA */}
+      <div className="bg-slate-900 text-white p-2.5 sm:p-3 rounded-xl border border-slate-800 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-3">
         {/* Controles principales de audio / secuencia */}
         <div className="flex flex-wrap items-center gap-2.5">
           <button

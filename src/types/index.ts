@@ -84,6 +84,7 @@ export interface AcademicCourse {
   startDate: string;
   endDate?: string;
   description?: string;
+  academicCategory?: string; // e.g. "CFGS Documentación y Administración Sanitarias", "CFGM TCAE", etc.
   createdAt: string;
   studentCount?: number;
 }

@@ -250,9 +250,9 @@ export default function CommunicationDashboard({ user }: Props) {
       )}
 
       {/* 2. Main Chat Layout: Channels Sidebar + Messages Area */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 min-h-[480px] lg:min-h-[clamp(520px,65vh,780px)]">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-3.5 h-[calc(100vh-140px)] min-h-[450px]">
         {/* Left Column: Channels List */}
-        <div className="lg:col-span-1 bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-4 flex flex-col">
+        <div className="lg:col-span-1 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-xs space-y-3 flex flex-col h-full overflow-hidden">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <span className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
               <Users className="w-4 h-4 text-brand-600" />
@@ -326,7 +326,7 @@ export default function CommunicationDashboard({ user }: Props) {
         </div>
 
         {/* Right Column: Chat Messages & Input */}
-        <div className="lg:col-span-3 bg-white rounded-3xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
+        <div className="lg:col-span-3 bg-white rounded-2xl border border-slate-200 shadow-xs flex flex-col h-full overflow-hidden">
           {/* Channel Header */}
           <div className="p-4 sm:p-5 border-b border-slate-100 bg-slate-50/70 flex items-center justify-between">
             <div>

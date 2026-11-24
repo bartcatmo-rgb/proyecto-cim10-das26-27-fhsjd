@@ -63,22 +63,22 @@ export default function ManualsCenter({
   };
 
   return (
-    <div className="space-y-6">
-      {/* Cabecera del Centro de Manuales */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 pb-5">
+    <div className="space-y-4">
+      {/* Cabecera del Centro de Manuales Compacta */}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-3">
         <div>
-          <div className="flex items-center gap-2 text-xs text-slate-500 font-semibold mb-1">
+          <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-semibold mb-0.5">
             <Link href="/" className="hover:text-brand-600 transition">Inicio</Link>
             <span>/</span>
             <span className="text-slate-800">Centro de Documentación</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-            <BookOpen className="w-8 h-8 text-brand-600" />
+          <h1 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+            <BookOpen className="w-5 h-5 text-brand-600" />
             Manuales Oficiales y Recursos Pedagógicos
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Documentación técnica, metodológica y operativa adaptada a tu perfil institucional (
-            <span className="font-bold text-slate-800 uppercase text-[11px] bg-slate-100 px-1.5 py-0.5 rounded">
+          <p className="text-xs text-slate-500 mt-0.5">
+            Documentación técnica y operativa adaptada a tu perfil institucional (
+            <span className="font-bold text-slate-800 uppercase text-[10px] bg-slate-100 px-1 py-0.2 rounded">
               {profile === 'admin' ? 'Administrador' : profile === 'teacher' ? 'Docente' : 'Estudiante'}
             </span>
             ).
@@ -89,25 +89,25 @@ export default function ManualsCenter({
           {canWatchPresentation && (
             <Link
               href="/presentacion"
-              className="px-3.5 py-2 bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold transition inline-flex items-center gap-1.5 shadow-sm shadow-brand-500/20"
+              className="px-3 py-1.5 bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white rounded-lg text-xs font-bold transition inline-flex items-center gap-1.5 shadow-xs"
             >
-              <Tv className="w-4 h-4" />
-              <span>Ver Presentación Completa</span>
+              <Tv className="w-3.5 h-3.5" />
+              <span>Ver Presentación</span>
             </Link>
           )}
 
           <Link
             href="/"
-            className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-100 transition inline-flex items-center gap-1.5 shadow-xs"
+            className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100 transition inline-flex items-center gap-1.5 shadow-2xs"
           >
-            <ArrowLeft className="w-4 h-4" />
-            Volver al Aula
+            <ArrowLeft className="w-3.5 h-3.5" />
+            Volver
           </Link>
         </div>
       </div>
 
       {/* Pestañas de Navegación Filtradas por Rol */}
-      <div className="flex flex-wrap border-b border-slate-200 gap-2">
+      <div className="flex flex-wrap border-b border-slate-200 gap-1.5">
         {manuals.map((manual) => {
           const Icon = MANUAL_ICONS[manual.id] || FileText;
           const isActive = activeTab === manual.id;
@@ -116,13 +116,13 @@ export default function ManualsCenter({
               key={manual.id}
               type="button"
               onClick={() => setActiveTab(manual.id)}
-              className={`pb-3 px-4 text-xs sm:text-sm font-bold border-b-2 transition flex items-center gap-2 ${
+              className={`pb-2 px-3 text-xs font-bold border-b-2 transition flex items-center gap-1.5 ${
                 isActive
                   ? 'border-brand-600 text-brand-700'
                   : 'border-transparent text-slate-500 hover:text-slate-800'
               }`}
             >
-              <Icon className="w-4 h-4" />
+              <Icon className="w-3.5 h-3.5" />
               <span>{manual.category}</span>
             </button>
           );

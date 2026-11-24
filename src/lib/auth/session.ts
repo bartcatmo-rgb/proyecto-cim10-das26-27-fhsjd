@@ -19,7 +19,8 @@ export async function setSessionCookie(
   preferredActiveRole?: UserRole
 ): Promise<void> {
   const cookieStore = await cookies();
-  const exp = Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60; // 7 days
+  // Session token validity window in payload (12 hours max continuous activity)
+  const exp = Math.floor(Date.now() / 1000) + 12 * 60 * 60;
 
   // If user has canSwitchRole enabled, respect preferredActiveRole, otherwise default to user.role
   const activeRole: UserRole =
@@ -38,12 +39,13 @@ export async function setSessionCookie(
     exp,
   });
 
+  // Strict session cookie: omit maxAge and expires so the browser treats it as a TRUE session cookie
+  // that is automatically discarded when the browser session or window is closed.
   cookieStore.set(SESSION_COOKIE_NAME, token, {
     httpOnly: true,
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',
     path: '/',
-    maxAge: 7 * 24 * 60 * 60,
   });
 }
 

@@ -11,6 +11,7 @@ const PUBLIC_API_ROUTES = new Set([
   '/api/auth/login',
   '/api/auth/register',
   '/api/auth/logout',
+  '/api/auth/session-leave',
   '/api/auth/me',
   '/api/health',
 ]);

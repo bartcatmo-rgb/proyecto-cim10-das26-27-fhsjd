@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
   try {
     await requireAdmin();
     const body = await req.json();
-    const { id, name, description, isCurrent } = body;
+    const { id, name, description, isCurrent, academicCategory } = body;
 
     if (!id || !name) {
       return NextResponse.json({ error: 'El código identificador y el nombre del curso son obligatorios.' }, { status: 400 });
@@ -33,6 +33,7 @@ export async function POST(req: NextRequest) {
       id: sanitizedId,
       name: String(name).trim(),
       description: description ? String(description).trim() : undefined,
+      academicCategory: academicCategory ? String(academicCategory).trim() : undefined,
       isCurrent: Boolean(isCurrent),
     });
 

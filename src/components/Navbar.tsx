@@ -92,18 +92,18 @@ export default function Navbar({ user }: NavbarProps) {
   }
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm print:hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs print:hidden">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
+        <div className="flex items-center justify-between h-12">
           
           {/* Logo / Brand */}
-          <Link href="/" className="flex items-center space-x-3 group">
-            <BrandLogo size="md" />
+          <Link href="/" className="flex items-center space-x-2 group flex-shrink-0">
+            <BrandLogo size="sm" />
           </Link>
 
           {/* Desktop Nav */}
           {user ? (
-            <nav className="hidden md:flex items-center space-x-1 lg:space-x-2">
+            <nav className="hidden xl:flex items-center space-x-1">
               {navLinks.map((link) => {
                 const Icon = link.icon;
                 const isActive = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href));
@@ -111,49 +111,53 @@ export default function Navbar({ user }: NavbarProps) {
                   <Link
                     key={link.href}
                     href={link.href}
-                    className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold transition-colors ${
                       isActive
-                        ? 'bg-brand-50 text-brand-700 font-semibold'
+                        ? 'bg-brand-50 text-brand-700 font-bold'
                         : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                     }`}
                   >
-                    <Icon className={`w-4 h-4 ${isActive ? 'text-brand-600' : 'text-slate-400'}`} />
-                    {link.label}
+                    <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-brand-600' : 'text-slate-400'}`} />
+                    <span>{link.label}</span>
                   </Link>
                 );
               })}
             </nav>
-          ) : null}
+          ) : (
+            <div className="text-xs font-semibold text-slate-500">
+              Campus Docent Sant Joan de Déu · Acceso Identificado
+            </div>
+          )}
 
           {/* User profile info & Logout for shared PCs */}
-          <div className="hidden md:flex items-center space-x-3">
+          <div className="hidden md:flex items-center space-x-2 flex-shrink-0">
             {effectiveRole === 'admin' && (
               <Link
                 href="/pizarra"
                 target="_blank"
                 title="Abrir Pizarra Digital de Proyección para Aula"
-                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:text-indigo-700 bg-slate-50 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-200 rounded-lg transition-colors"
+                className="flex items-center gap-1 px-2 py-1 text-xs font-bold text-slate-700 hover:text-indigo-700 bg-slate-100 hover:bg-indigo-50 border border-slate-200 rounded-md transition-colors"
               >
                 <Tv className="w-3.5 h-3.5 text-indigo-600" />
                 <span>Pizarra</span>
               </Link>
             )}
             {user ? (
-              <div className="flex items-center gap-3 pl-3 border-l border-slate-200">
-                <div className="text-right">
-                  <div className="text-xs font-semibold text-slate-900 flex items-center justify-end gap-1.5">
-                    {user.fullName}
+              <div className="flex items-center gap-2 pl-2 border-l border-slate-200 text-xs">
+                <div className="text-right leading-tight">
+                  <div className="font-bold text-slate-900 flex items-center justify-end gap-1 text-xs">
+                    <span className="truncate max-w-[130px]">{user.fullName}</span>
                     {effectiveRole === 'admin' ? (
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 border border-purple-200">
+                      <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-purple-100 text-purple-700 border border-purple-200">
                         DOCENTE
                       </span>
                     ) : (
-                      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">
+                      <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">
                         ALUMNO
                       </span>
                     )}
                   </div>
-                  <div className="text-[11px] text-slate-500">
+                  <div className="text-[10px] text-slate-500 truncate max-w-[130px]">
                     {user.academicGroup}
                   </div>
                 </div>
@@ -164,10 +168,10 @@ export default function Navbar({ user }: NavbarProps) {
                     onClick={handleToggleRole}
                     disabled={switchingRole}
                     title="Alternar entre perfil Docente y Alumno"
-                    className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-300 rounded-lg transition-colors shadow-xs"
+                    className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-300 rounded transition-colors shadow-2xs"
                   >
                     <span>⇄</span>
-                    <span>{switchingRole ? 'Cambiando...' : effectiveRole === 'admin' ? 'Ver como Alumno' : 'Ver como Docente'}</span>
+                    <span>{switchingRole ? '...' : effectiveRole === 'admin' ? 'Alumno' : 'Docente'}</span>
                   </button>
                 )}
 
@@ -176,16 +180,16 @@ export default function Navbar({ user }: NavbarProps) {
                   onClick={handleLogout}
                   disabled={loggingOut}
                   title="Cerrar sesión en este equipo compartido"
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-rose-500"
+                  className="flex items-center gap-1 px-2 py-1 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-md transition-colors"
                 >
-                  <LogOut className="w-3.5 h-3.5" />
-                  <span>{loggingOut ? 'Saliendo...' : 'Cerrar sesión'}</span>
+                  <LogOut className="w-3 h-3" />
+                  <span>{loggingOut ? 'Saliendo...' : 'Salir'}</span>
                 </button>
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-brand-50 text-brand-800 border border-brand-200">
-                  <Shield className="w-3.5 h-3.5 text-brand-600" />
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-brand-50 text-brand-800 border border-brand-200">
+                  <Shield className="w-3 h-3 text-brand-600" />
                   <span>Acceso Identificado · FHSJD</span>
                 </span>
               </div>

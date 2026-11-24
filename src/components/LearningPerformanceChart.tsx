@@ -94,14 +94,14 @@ export default function LearningPerformanceChart() {
   const activeSubject = subjectsList.find((s) => s.id === selectedSubjectId);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3.5">
       {/* Subject Filter Bar / Tabs */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
         <div>
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
             Vista del Rendimiento Académico:
           </span>
-          <div className="flex flex-wrap items-center gap-2 mt-2">
+          <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
             <button
               onClick={() => handleSelectSubject(null)}
               className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-xs ${

@@ -2150,6 +2150,8 @@ export function getAcademicCourses(): AcademicCourse[] {
     isCurrent: Boolean(r.is_current),
     startDate: r.start_date,
     endDate: r.end_date || undefined,
+    academicCategory: r.academic_category || 'CFGS Documentación y Administración Sanitarias',
+    description: r.description || undefined,
     createdAt: r.created_at,
     studentCount: Number(r.student_count || 0),
   }));
@@ -2162,25 +2164,28 @@ export function createAcademicCourse(data: {
   startDate?: string;
   endDate?: string;
   description?: string;
+  academicCategory?: string;
 }): AcademicCourse {
   const db = getDb();
   const now = new Date().toISOString();
   const startDate = data.startDate || now;
   const isCurrent = Boolean(data.isCurrent);
+  const academicCategory = (data.academicCategory || 'CFGS Documentación y Administración Sanitarias').trim();
 
   const tx = db.transaction(() => {
     if (isCurrent) {
       db.prepare('UPDATE academic_courses SET is_current = 0').run();
     }
     db.prepare(`
-      INSERT INTO academic_courses (id, name, is_current, start_date, end_date, created_at)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO academic_courses (id, name, is_current, start_date, end_date, academic_category, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `).run(
       data.id.trim().toUpperCase(),
       data.name.trim(),
       isCurrent ? 1 : 0,
       startDate,
       data.endDate || null,
+      academicCategory,
       now
     );
   });
@@ -2193,6 +2198,7 @@ export function createAcademicCourse(data: {
     isCurrent,
     startDate,
     endDate: data.endDate,
+    academicCategory,
     description: data.description,
     createdAt: now,
     studentCount: 0,

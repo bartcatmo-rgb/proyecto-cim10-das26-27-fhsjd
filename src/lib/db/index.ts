@@ -129,6 +129,9 @@ export function initDb(db: Database.Database): void {
     runColumnMigration('users', 'default_subject_id', "TEXT DEFAULT 'subj_cim10_default'");
     runColumnMigration('users', 'default_classroom_id', 'TEXT');
 
+    // Table: academic_courses
+    runColumnMigration('academic_courses', 'academic_category', "TEXT DEFAULT 'CFGS Documentación y Administración Sanitarias'");
+
     // Table: topics
     runColumnMigration('topics', 'subject_id', "TEXT NOT NULL DEFAULT 'subj_cim10_default'");
     runColumnMigration('topics', 'classroom_id', 'TEXT');

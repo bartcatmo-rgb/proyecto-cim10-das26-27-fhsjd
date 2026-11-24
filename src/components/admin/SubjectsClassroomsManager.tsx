@@ -397,19 +397,19 @@ export default function SubjectsClassroomsManager() {
       </div>
 
       {/* SECCIÓN 2: AULAS POR MATERIA */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
-              <div className="p-2 bg-purple-50 text-purple-700 rounded-xl">
-                <School className="w-5 h-5" />
+              <div className="p-1.5 bg-purple-50 text-purple-700 rounded-lg">
+                <School className="w-4 h-4" />
               </div>
-              <h2 className="text-xl font-black text-slate-900 tracking-tight">
+              <h2 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">
                 Aulas y Grupos por Materia
               </h2>
             </div>
-            <p className="mt-1 text-xs text-slate-500">
-              Despliegue de múltiples aulas por materia (Grupo Mañana, Tarde, Aula A, Aula B) con asignación de docentes y alumnos.
+            <p className="mt-0.5 text-xs text-slate-500">
+              Despliegue de múltiples aulas por materia con asignación de docentes y alumnos.
             </p>
           </div>
 

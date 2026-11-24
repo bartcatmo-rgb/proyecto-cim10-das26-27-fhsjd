@@ -79,6 +79,8 @@ export default function AdminPanel({ adminUser, analytics, students, initialCour
   const [showYearModal, setShowYearModal] = useState(false);
   const [newYearCode, setNewYearCode] = useState('');
   const [newYearName, setNewYearName] = useState('');
+  const [newYearCategory, setNewYearCategory] = useState('CFGS Documentación y Administración Sanitarias');
+  const [customYearCategory, setCustomYearCategory] = useState('');
   const [newYearIsCurrent, setNewYearIsCurrent] = useState(false);
   const [yearSaving, setYearSaving] = useState(false);
 
@@ -113,12 +115,18 @@ export default function AdminPanel({ adminUser, analytics, students, initialCour
 
     try {
       setYearSaving(true);
+      const finalCategory =
+        newYearCategory === 'CUSTOM'
+          ? customYearCategory.trim() || 'Formación Sanitaria Específica'
+          : newYearCategory;
+
       const res = await fetch('/api/admin/courses', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id: newYearCode,
           name: newYearName,
+          academicCategory: finalCategory,
           isCurrent: newYearIsCurrent,
         }),
       });
@@ -128,6 +136,8 @@ export default function AdminPanel({ adminUser, analytics, students, initialCour
         const createdCode = newYearCode.toUpperCase().trim();
         setNewYearCode('');
         setNewYearName('');
+        setNewYearCategory('CFGS Documentación y Administración Sanitarias');
+        setCustomYearCategory('');
         setNewYearIsCurrent(false);
         handleSelectYear(createdCode);
       } else {
@@ -304,55 +314,55 @@ export default function AdminPanel({ adminUser, analytics, students, initialCour
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-4 space-y-3.5">
       
-      {/* Top Banner */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      {/* Top Banner Compact */}
+      <div className="bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <div className="p-2 bg-purple-50 text-purple-700 rounded-xl">
-              <Shield className="w-5 h-5" />
+            <div className="p-1.5 bg-purple-50 text-purple-700 rounded-lg">
+              <Shield className="w-4 h-4" />
             </div>
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+            <h1 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
               Panel de Coordinación Docente · FHSJD
             </h1>
           </div>
-          <p className="mt-1 text-xs text-slate-500">
-            Seguimiento de alumnos, métricas del grupo, redacción de informes tutoriales y gestión de persistencia.
+          <p className="mt-0.5 text-xs text-slate-500">
+            Seguimiento de alumnos, métricas del grupo, informes tutoriales y gestión académica.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           <Link
             href="/admin/pruebas"
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-brand-700 hover:bg-brand-800 text-white rounded-xl text-xs font-bold shadow-sm transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-700 hover:bg-brand-800 text-white rounded-lg text-xs font-bold shadow-xs transition-colors"
           >
-            <Sliders className="w-4 h-4" />
+            <Sliders className="w-3.5 h-3.5" />
             <span>Configurar Examen</span>
           </Link>
           <Link
             href="/admin/en-vivo"
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-xs transition-colors"
           >
-            <Monitor className="w-4 h-4" />
+            <Monitor className="w-3.5 h-3.5" />
             <span>Monitor Aula</span>
           </Link>
           <Link
             href="/pizarra"
             target="_blank"
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold shadow-xs transition-colors"
           >
-            <Tv className="w-4 h-4" />
+            <Tv className="w-3.5 h-3.5" />
             <span>Pizarra</span>
           </Link>
-          <div className="text-xs bg-purple-50 border border-purple-200 text-purple-900 font-semibold px-3 py-1.5 rounded-xl">
+          <div className="text-[11px] bg-purple-50 border border-purple-200 text-purple-900 font-bold px-2.5 py-1 rounded-lg">
             Profesor: {adminUser.fullName}
           </div>
         </div>
       </div>
 
       {/* SELECTOR DE AÑO ACADÉMICO DE TRABAJO */}
-      <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
+      <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
             <Calendar className="w-5 h-5 text-brand-600" />
@@ -385,6 +395,13 @@ export default function AdminPanel({ adminUser, analytics, students, initialCour
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300 shadow-sm">
               <History className="w-3.5 h-3.5 text-amber-600" />
               <span>Año Académico Pasado (Auditoría / Histórico)</span>
+            </span>
+          )}
+
+          {selectedCourse?.academicCategory && (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-brand-50 text-brand-700 border border-brand-200">
+              <School className="w-3 h-3 text-brand-600" />
+              <span>{selectedCourse.academicCategory}</span>
             </span>
           )}
 
@@ -442,13 +459,13 @@ export default function AdminPanel({ adminUser, analytics, students, initialCour
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-colors ${
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors ${
                 isActive
-                  ? 'bg-slate-900 text-white shadow-sm'
+                  ? 'bg-slate-900 text-white shadow-xs font-bold'
                   : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
               }`}
             >
-              <Icon className="w-4 h-4" />
+              <Icon className="w-3.5 h-3.5" />
               <span>{tab.label}</span>
             </button>
           );
@@ -961,6 +978,32 @@ export default function AdminPanel({ adminUser, analytics, students, initialCour
                   onChange={(e) => setNewYearName(e.target.value)}
                   className="w-full p-2.5 border border-slate-300 rounded-xl text-slate-900 focus:ring-2 focus:ring-brand-500"
                 />
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 block mb-1">Categoría Académica del Curso / Plan de Estudios:</label>
+                <select
+                  value={newYearCategory}
+                  onChange={(e) => setNewYearCategory(e.target.value)}
+                  className="w-full p-2.5 border border-slate-300 rounded-xl text-slate-900 focus:ring-2 focus:ring-brand-500 bg-white"
+                >
+                  <option value="CFGS Documentación y Administración Sanitarias">CFGS Documentación y Administración Sanitarias (DAS)</option>
+                  <option value="CFGM Cuidados Auxiliares de Enfermería (TCAE)">CFGM Cuidados Auxiliares de Enfermería (TCAE)</option>
+                  <option value="CFGS Imagen para el Diagnóstico y Medicina Nuclear">CFGS Imagen para el Diagnóstico y Medicina Nuclear</option>
+                  <option value="CFGM Farmacia y Parafarmacia">CFGM Farmacia y Parafarmacia</option>
+                  <option value="Formación Médica Continua / Especialización Clínica">Formación Médica Continua / Especialización Clínica</option>
+                  <option value="CUSTOM">+ Otra categoría académica personalizada...</option>
+                </select>
+                {newYearCategory === 'CUSTOM' && (
+                  <input
+                    type="text"
+                    required
+                    placeholder="Escribe la denominación de la nueva categoría académica..."
+                    value={customYearCategory}
+                    onChange={(e) => setCustomYearCategory(e.target.value)}
+                    className="w-full mt-2 p-2.5 border border-brand-300 rounded-xl text-slate-900 focus:ring-2 focus:ring-brand-500 bg-brand-50/50"
+                  />
+                )}
               </div>
 
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">

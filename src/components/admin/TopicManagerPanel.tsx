@@ -17,11 +17,28 @@ export default function TopicManagerPanel() {
   const [file, setFile] = useState<File | null>(null);
   const [customTitle, setCustomTitle] = useState('');
   const [customCategory, setCustomCategory] = useState('Documentación Sanitaria');
+  const [isNewCategoryMode, setIsNewCategoryMode] = useState(false);
+  const [newCustomCategoryName, setNewCustomCategoryName] = useState('');
   const [isPublished, setIsPublished] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
   const [engineUsed, setEngineUsed] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Dynamic categories collected from database topics + default categories
+  const dynamicCategories = Array.from(
+    new Set([
+      'Documentación Sanitaria',
+      'Codificación Clínica Sanitaria',
+      'Sistemas de Información Clínica',
+      'Gestión de Archivo y Admisión',
+      'Terminología Médica',
+      'Atención Primaria y Comunitaria',
+      'Urgencias y Emergencias Sanitarias',
+      'Normativa y Gestión Hospitalaria',
+      ...topics.map((t) => t.category).filter(Boolean),
+    ])
+  );
 
   useEffect(() => {
     fetchTopics();
@@ -104,10 +121,15 @@ export default function TopicManagerPanel() {
     setUploadStatus('1/3: Extrayendo contenido textual mediante parser nativo...');
     setEngineUsed(null);
 
+    const effectiveCategory =
+      isNewCategoryMode && newCustomCategoryName.trim()
+        ? newCustomCategoryName.trim()
+        : customCategory.trim() || 'Documentación Sanitaria';
+
     const formData = new FormData();
     formData.append('file', file);
     if (customTitle.trim()) formData.append('title', customTitle.trim());
-    if (customCategory.trim()) formData.append('category', customCategory.trim());
+    formData.append('category', effectiveCategory);
     formData.append('is_published', isPublished ? '1' : '0');
 
     try {
@@ -193,23 +215,50 @@ export default function TopicManagerPanel() {
               />
             </div>
 
-            {/* Category */}
+            {/* Category / Thematic selection */}
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Categoría Académica
-              </label>
-              <select
-                value={customCategory}
-                onChange={(e) => setCustomCategory(e.target.value)}
-                disabled={uploading}
-                className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-              >
-                <option value="Documentación Sanitaria">Documentación Sanitaria</option>
-                <option value="Codificación Clínica Sanitaria">Codificación Clínica Sanitaria</option>
-                <option value="Sistemas de Información Clínica">Sistemas de Información Clínica</option>
-                <option value="Gestión de Archivo y Admisión">Gestión de Archivo y Admisión</option>
-                <option value="Terminología Médica">Terminología Médica</option>
-              </select>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-semibold text-slate-700">
+                  Temática / Categoría Académica
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setIsNewCategoryMode(!isNewCategoryMode)}
+                  className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 underline transition"
+                >
+                  {isNewCategoryMode ? '← Elegir de existentes' : '+ Añadir nueva temática'}
+                </button>
+              </div>
+
+              {isNewCategoryMode ? (
+                <div className="space-y-1">
+                  <input
+                    type="text"
+                    required
+                    placeholder="Escribe el nombre de la nueva temática..."
+                    value={newCustomCategoryName}
+                    onChange={(e) => setNewCustomCategoryName(e.target.value)}
+                    disabled={uploading}
+                    className="w-full text-xs bg-indigo-50/60 border border-indigo-300 rounded-xl px-3 py-2 text-indigo-950 font-semibold focus:ring-2 focus:ring-indigo-500 focus:outline-none placeholder:text-indigo-400"
+                  />
+                  <p className="text-[10px] text-slate-500">
+                    Esta nueva temática se creará y quedará disponible para organizar todos los temas del curso.
+                  </p>
+                </div>
+              ) : (
+                <select
+                  value={customCategory}
+                  onChange={(e) => setCustomCategory(e.target.value)}
+                  disabled={uploading}
+                  className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                >
+                  {dynamicCategories.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
           </div>
 

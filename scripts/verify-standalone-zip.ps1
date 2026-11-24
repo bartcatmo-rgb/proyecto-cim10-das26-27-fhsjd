@@ -20,6 +20,7 @@ try {
         'node_modules/next/dist/bin/next',
         '.next/BUILD_ID',
         'AulaCIM-10-Launcher.exe',
+        'INICIAR-AULACIM10.bat',
         'start-lan.bat',
         'launcher.config.json',
         'package.json',

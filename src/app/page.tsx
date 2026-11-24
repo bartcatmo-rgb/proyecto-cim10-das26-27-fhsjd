@@ -20,6 +20,7 @@ import {
   Trophy,
   History,
   MessageSquare,
+  Tv,
 } from 'lucide-react';
 import PublicLandingView from '@/components/PublicLandingView';
 import TopicIndexView from '@/components/TopicIndexView';
@@ -34,6 +35,7 @@ export default async function HomePage() {
   const errorSynthesis = getStudentErrorSynthesis(user.id);
   const notices = getNotices();
   const activeExam = getActiveExam();
+  const isDocenteOrAdmin = user.role === 'admin' || user.activeRole === 'admin';
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
@@ -96,6 +98,16 @@ export default async function HomePage() {
               <BookOpen className="w-4 h-4" />
               <span>Manuales</span>
             </Link>
+
+            {isDocenteOrAdmin && (
+              <Link
+                href="/presentacion"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-purple-950/80 hover:bg-purple-900 text-purple-200 border border-purple-700/60 transition-all shadow-sm"
+              >
+                <Tv className="w-4 h-4 text-purple-400" />
+                <span>Presentación Programa (Voz Neural)</span>
+              </Link>
+            )}
 
             <Link
               href="/chat"

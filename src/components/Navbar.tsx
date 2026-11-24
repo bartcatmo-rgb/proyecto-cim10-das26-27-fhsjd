@@ -86,6 +86,7 @@ export default function Navbar({ user }: NavbarProps) {
     navLinks.push(
       { href: '/admin/pruebas', label: 'Configurar Pruebas', icon: Sliders },
       { href: '/admin/en-vivo', label: 'Monitor Aula', icon: Monitor },
+      { href: '/presentacion', label: 'Presentación', icon: Tv },
       { href: '/admin', label: 'Gestión', icon: Shield }
     );
   }

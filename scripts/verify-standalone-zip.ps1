@@ -24,7 +24,13 @@ try {
         'start-lan.bat',
         'launcher.config.json',
         'package.json',
-        'data/.gitkeep'
+        'data/.gitkeep',
+        'docs/MANUAL_ALUMNOS.md',
+        'docs/MANUAL_PROFESORES.md',
+        'docs/MANUAL_ADMINISTRADORES.md',
+        'docs/MANUAL_INSTITUTO_IT.md',
+        'docs/GUION_VIDEO_PRESENTACION.md',
+        'public/media/presentation-scenes.json'
     )
     
     $results = foreach ($target in $checkTargets) {

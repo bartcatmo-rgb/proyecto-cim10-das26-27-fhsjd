@@ -344,6 +344,61 @@ CREATE TABLE IF NOT EXISTS topic_test_attempts (
   FOREIGN KEY (topic_id) REFERENCES topics(id) ON DELETE CASCADE
 );
 
+-- Gestión Granular de Roles Multi-Perfil (student, teacher, admin)
+CREATE TABLE IF NOT EXISTS user_roles (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  role TEXT NOT NULL,
+  assigned_at TEXT NOT NULL DEFAULT (datetime('now')),
+  assigned_by TEXT,
+  UNIQUE(user_id, role),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Materias del Curso (ej. Codificación CIM-10, MEAP, Documentación Sanitaria)
+CREATE TABLE IF NOT EXISTS course_subjects (
+  id TEXT PRIMARY KEY,
+  course_id TEXT NOT NULL DEFAULT 'DAS-26-27',
+  code TEXT UNIQUE NOT NULL,
+  name TEXT NOT NULL,
+  description TEXT,
+  icon TEXT NOT NULL DEFAULT 'book',
+  is_active INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  FOREIGN KEY (course_id) REFERENCES academic_courses(id) ON DELETE CASCADE
+);
+
+-- Múltiples Aulas por Materia (ej. Aula A Mañanas, Aula B Tardes)
+CREATE TABLE IF NOT EXISTS classrooms (
+  id TEXT PRIMARY KEY,
+  subject_id TEXT NOT NULL,
+  course_id TEXT NOT NULL DEFAULT 'DAS-26-27',
+  name TEXT NOT NULL,
+  code TEXT UNIQUE NOT NULL,
+  description TEXT,
+  teacher_id TEXT,
+  academic_year TEXT NOT NULL DEFAULT 'DAS-26-27',
+  is_active INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  FOREIGN KEY (subject_id) REFERENCES course_subjects(id) ON DELETE CASCADE,
+  FOREIGN KEY (teacher_id) REFERENCES users(id) ON DELETE SET NULL,
+  FOREIGN KEY (course_id) REFERENCES academic_courses(id) ON DELETE CASCADE
+);
+
+-- Asignación de Alumnos y Docentes a Aulas
+CREATE TABLE IF NOT EXISTS classroom_members (
+  id TEXT PRIMARY KEY,
+  classroom_id TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  member_role TEXT NOT NULL DEFAULT 'student',
+  joined_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE(classroom_id, user_id),
+  FOREIGN KEY (classroom_id) REFERENCES classrooms(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 -- Indices for rapid querying and indexing
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 CREATE INDEX IF NOT EXISTS idx_users_dni ON users(dni_nie);
@@ -379,4 +434,10 @@ CREATE INDEX IF NOT EXISTS idx_topic_test_attempts_user ON topic_test_attempts(u
 CREATE INDEX IF NOT EXISTS idx_chat_messages_channel ON chat_messages(channel_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_chat_messages_user ON chat_messages(user_id);
 CREATE INDEX IF NOT EXISTS idx_chat_channels_course ON chat_channels(course_id);
+CREATE INDEX IF NOT EXISTS idx_user_roles_user ON user_roles(user_id, role);
+CREATE INDEX IF NOT EXISTS idx_course_subjects_code ON course_subjects(code, is_active);
+CREATE INDEX IF NOT EXISTS idx_classrooms_subject ON classrooms(subject_id, is_active);
+CREATE INDEX IF NOT EXISTS idx_classrooms_code ON classrooms(code);
+CREATE INDEX IF NOT EXISTS idx_classroom_members_user ON classroom_members(user_id);
+CREATE INDEX IF NOT EXISTS idx_classroom_members_class ON classroom_members(classroom_id);
 `;

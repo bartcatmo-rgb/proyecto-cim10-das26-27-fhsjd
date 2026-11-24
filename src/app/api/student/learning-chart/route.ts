@@ -7,7 +7,10 @@ export async function GET(req: NextRequest) {
     // Strictly Anti-IDOR: session userId is taken directly from the server cookie
     const session = await requireAuth();
 
-    const metrics = getStudentLearningMetrics(session.id);
+    const url = new URL(req.url);
+    const subjectId = url.searchParams.get('subjectId') || undefined;
+
+    const metrics = getStudentLearningMetrics(session.id, subjectId);
 
     return NextResponse.json({
       success: true,

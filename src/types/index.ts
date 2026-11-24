@@ -1,15 +1,18 @@
-export type UserRole = 'student' | 'admin';
+export type UserRole = 'student' | 'teacher' | 'admin';
 export type StudentStatus = 'active' | 'inactive';
 
 export interface User {
   id: string;
   username: string;
   fullName: string;
+  firstName?: string;
+  lastName?: string;
   dniNie: string; // Validated Spanish DNI or NIE
   email: string;
   phone?: string;
   academicGroup: string; // e.g. "DAS 26/27 - Grupo A"
   role: UserRole;
+  roles?: UserRole[];
   courseId: string; // e.g. "DAS-26-27"
   status: StudentStatus; // 'active' | 'inactive'
   enrolledAt: string;
@@ -18,6 +21,60 @@ export interface User {
   canSwitchRole?: boolean;
   activeRole?: UserRole;
   mustChangePassword?: boolean;
+  isActive?: boolean;
+  defaultSubjectId?: string;
+  defaultClassroomId?: string;
+  subjectName?: string;
+  classroomName?: string;
+}
+
+export interface CourseSubject {
+  id: string;
+  courseId: string;
+  code: string;
+  name: string;
+  description?: string;
+  icon?: string;
+  color?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  classroomCount?: number;
+  studentCount?: number;
+  topicCount?: number;
+}
+
+export interface Classroom {
+  id: string;
+  subjectId: string;
+  subjectName?: string;
+  courseId: string;
+  name: string;
+  code: string;
+  description?: string;
+  teacherId?: string;
+  teacherName?: string;
+  academicYear: string;
+  maxStudents?: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  studentCount?: number;
+}
+
+export interface ClassroomMember {
+  id: string;
+  classroomId: string;
+  userId: string;
+  userName?: string;
+  fullName?: string;
+  username?: string;
+  maskedDni?: string;
+  dniNie?: string;
+  userRole?: string;
+  memberRole: 'student' | 'teacher' | 'assistant';
+  roleInClass?: 'student' | 'teacher' | 'coordinator';
+  joinedAt: string;
 }
 
 export interface AcademicCourse {

@@ -26,8 +26,12 @@ import {
   SecurityOverviewResponse,
   ChatChannel,
   ChatMessage,
+  UserRole,
+  CourseSubject,
+  Classroom,
+  ClassroomMember,
 } from '@/types';
-import { maskDni } from '../auth/crypto';
+import { maskDni, hashPassword } from '../auth/crypto';
 import { encryptField, decryptField, computeBlindIndex, sanitizeForAudit } from '../field-crypto';
 import { hashIp, maskIp, summarizeUserAgent, sanitizeSecurityDetails } from '../security-telemetry';
 import { sendIntrusionAlert, getAlertChannelsStatus, sendTestIntrusionAlert } from '../security/intrusion-alerts';
@@ -2872,4 +2876,996 @@ export function moderateChatMessage(
   }
 
   return true;
+}
+
+// -------------------------------------------------------------
+// GESTIÓN INTEGRAL DE USUARIOS, ROLES Y PROFESORADO (ADMIN RBAC)
+// -------------------------------------------------------------
+
+export function getUserRoles(userId: string): UserRole[] {
+  const db = getDb();
+  const rows = db.prepare('SELECT role FROM user_roles WHERE user_id = ?').all(userId) as Array<{ role: string }>;
+  if (rows && rows.length > 0) {
+    return rows.map((r) => r.role as UserRole);
+  }
+  const u = db.prepare('SELECT role, can_switch_role FROM users WHERE id = ?').get(userId) as any;
+  if (!u) return ['student'];
+  const res: UserRole[] = [u.role as UserRole];
+  if (u.can_switch_role && !res.includes('student')) {
+    res.push('student');
+  }
+  return res;
+}
+
+export function getAdminUsersList(filter?: {
+  role?: string;
+  status?: string;
+  search?: string;
+  courseId?: string;
+  subjectId?: string;
+  classroomId?: string;
+}): Array<User & { roles: UserRole[]; maskedDni: string; totalAttempts: number; avgScore: number; subjectName?: string; classroomName?: string }> {
+  const db = getDb();
+
+  let sql = `
+    SELECT 
+      u.*,
+      cs.name as subject_name,
+      cl.name as classroom_name,
+      COUNT(DISTINCT ta.id) as total_attempts,
+      COALESCE(AVG(ta.score), 0) as avg_score
+    FROM users u
+    LEFT JOIN course_subjects cs ON u.default_subject_id = cs.id
+    LEFT JOIN classrooms cl ON u.default_classroom_id = cl.id
+    LEFT JOIN test_attempts ta ON u.id = ta.user_id
+    WHERE 1=1
+  `;
+  const params: any[] = [];
+
+  if (filter?.courseId && filter.courseId !== 'ALL' && filter.courseId !== 'all') {
+    sql += ' AND (u.course_id = ? OR u.course_id IS NULL)';
+    params.push(filter.courseId);
+  }
+
+  if (filter?.status && filter.status !== 'all') {
+    sql += ' AND u.status = ?';
+    params.push(filter.status);
+  }
+
+  if (filter?.role && filter.role !== 'all') {
+    sql += ` AND (u.role = ? OR u.id IN (SELECT user_id FROM user_roles WHERE role = ?))`;
+    params.push(filter.role, filter.role);
+  }
+
+  if (filter?.subjectId && filter.subjectId !== 'all') {
+    sql += ' AND u.default_subject_id = ?';
+    params.push(filter.subjectId);
+  }
+
+  if (filter?.classroomId && filter.classroomId !== 'all') {
+    sql += ' AND (u.default_classroom_id = ? OR u.id IN (SELECT user_id FROM classroom_members WHERE classroom_id = ?))';
+    params.push(filter.classroomId, filter.classroomId);
+  }
+
+  if (filter?.search && filter.search.trim()) {
+    const s = `%${filter.search.trim().toLowerCase()}%`;
+    sql += ` AND (
+      LOWER(u.full_name) LIKE ? OR 
+      LOWER(u.username) LIKE ? OR 
+      LOWER(u.email) LIKE ? OR 
+      u.dni_bindex = ?
+    )`;
+    const bindex = computeBlindIndex(filter.search.trim().toUpperCase());
+    params.push(s, s, s, bindex);
+  }
+
+  sql += ' GROUP BY u.id ORDER BY u.status ASC, u.role DESC, u.full_name ASC';
+
+  const rows = db.prepare(sql).all(...params) as any[];
+
+  // Fetch all roles grouped by user for optimal batch performance
+  const roleRows = db.prepare('SELECT user_id, role FROM user_roles').all() as Array<{ user_id: string; role: string }>;
+  const rolesByUser: Record<string, UserRole[]> = {};
+  for (const r of roleRows) {
+    if (!rolesByUser[r.user_id]) rolesByUser[r.user_id] = [];
+    rolesByUser[r.user_id].push(r.role as UserRole);
+  }
+
+  return rows.map((r) => {
+    const userRoles = rolesByUser[r.id] && rolesByUser[r.id].length > 0
+      ? rolesByUser[r.id]
+      : [r.role as UserRole];
+
+    return {
+      id: r.id,
+      username: r.username,
+      fullName: r.full_name,
+      firstName: r.first_name || undefined,
+      lastName: r.last_name || undefined,
+      dniNie: maskDni(r.dni_nie),
+      maskedDni: maskDni(r.dni_nie),
+      email: r.email,
+      phone: r.phone || undefined,
+      academicGroup: r.academic_group,
+      role: r.role as UserRole,
+      roles: userRoles,
+      courseId: r.course_id || 'DAS-26-27',
+      status: (r.status || 'active') as 'active' | 'inactive',
+      enrolledAt: r.enrolled_at || r.created_at,
+      unregisteredAt: r.unregistered_at || undefined,
+      createdAt: r.created_at,
+      canSwitchRole: Boolean(r.can_switch_role),
+      mustChangePassword: Boolean(r.must_change_password),
+      defaultSubjectId: r.default_subject_id || undefined,
+      defaultClassroomId: r.default_classroom_id || undefined,
+      subjectName: r.subject_name || undefined,
+      classroomName: r.classroom_name || undefined,
+      totalAttempts: Number(r.total_attempts || 0),
+      avgScore: Math.round(Number(r.avg_score || 0) * 10) / 10,
+    };
+  });
+}
+
+export function getUserDetailsWithRoles(userId: string): (User & { roles: UserRole[]; rawDni?: string }) | null {
+  const db = getDb();
+  const row = db.prepare(`
+    SELECT u.*, cs.name as subject_name, cl.name as classroom_name
+    FROM users u
+    LEFT JOIN course_subjects cs ON u.default_subject_id = cs.id
+    LEFT JOIN classrooms cl ON u.default_classroom_id = cl.id
+    WHERE u.id = ?
+  `).get(userId) as any;
+
+  if (!row) return null;
+
+  const roles = getUserRoles(userId);
+
+  return {
+    id: row.id,
+    username: row.username,
+    fullName: row.full_name,
+    firstName: row.first_name || undefined,
+    lastName: row.last_name || undefined,
+    dniNie: maskDni(row.dni_nie),
+    rawDni: decryptField(row.dni_nie),
+    email: row.email,
+    phone: row.phone || undefined,
+    academicGroup: row.academic_group,
+    role: row.role as UserRole,
+    roles,
+    courseId: row.course_id || 'DAS-26-27',
+    status: (row.status || 'active') as 'active' | 'inactive',
+    enrolledAt: row.enrolled_at || row.created_at,
+    unregisteredAt: row.unregistered_at || undefined,
+    createdAt: row.created_at,
+    canSwitchRole: Boolean(row.can_switch_role),
+    mustChangePassword: Boolean(row.must_change_password),
+    defaultSubjectId: row.default_subject_id || undefined,
+    defaultClassroomId: row.default_classroom_id || undefined,
+    subjectName: row.subject_name || undefined,
+    classroomName: row.classroom_name || undefined,
+  };
+}
+
+export function createAdminUser(
+  data: {
+    username: string;
+    fullName?: string;
+    firstName?: string;
+    lastName?: string;
+    dniNie: string;
+    email: string;
+    phone?: string;
+    academicGroup?: string;
+    role: UserRole;
+    roles?: UserRole[];
+    password?: string;
+    canSwitchRole?: boolean;
+    courseId?: string;
+    defaultSubjectId?: string;
+    defaultClassroomId?: string;
+  },
+  createdByAdminId?: string
+): User & { roles: UserRole[] } {
+  const db = getDb();
+  const id = `usr_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+  const cleanUsername = data.username.trim().toLowerCase();
+  const rawDni = data.dniNie.trim().toUpperCase();
+  const bindex = computeBlindIndex(rawDni);
+  const encryptedDni = encryptField(rawDni);
+
+  // Check username and DNI collisions
+  const existingUsername = db.prepare('SELECT id FROM users WHERE LOWER(username) = ?').get(cleanUsername);
+  if (existingUsername) {
+    throw new Error(`El nombre de usuario '${cleanUsername}' ya está registrado.`);
+  }
+
+  const existingDni = db.prepare('SELECT id FROM users WHERE dni_bindex = ? OR UPPER(dni_nie) = ?').get(bindex, rawDni);
+  if (existingDni) {
+    throw new Error('El DNI/NIE introducido ya pertenece a un usuario registrado.');
+  }
+
+  const rawPassword = data.password && data.password.trim() ? data.password.trim() : '1234';
+  const { hash, salt } = hashPassword(rawPassword);
+
+  const fullName = data.fullName && data.fullName.trim()
+    ? data.fullName.trim()
+    : `${data.firstName || ''} ${data.lastName || ''}`.trim() || cleanUsername;
+
+  const nowIso = new Date().toISOString();
+  const canSwitch = Boolean(data.canSwitchRole || data.role === 'admin' || (data.roles && data.roles.length > 1));
+
+  db.prepare(`
+    INSERT INTO users (
+      id, username, password_hash, password_salt, full_name, first_name, last_name,
+      dni_nie, dni_bindex, email, phone, academic_group, role, course_id, status,
+      can_switch_role, must_change_password, default_subject_id, default_classroom_id,
+      privacy_accepted_at, privacy_policy_version, created_at, updated_at
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, 0, ?, ?, ?, 'v1.0-2026', ?, ?)
+  `).run(
+    id,
+    cleanUsername,
+    hash,
+    salt,
+    fullName,
+    data.firstName || null,
+    data.lastName || null,
+    encryptedDni,
+    bindex,
+    data.email.trim().toLowerCase(),
+    data.phone || null,
+    data.academicGroup || 'DAS 26/27 - Grupo A',
+    data.role,
+    data.courseId || 'DAS-26-27',
+    canSwitch ? 1 : 0,
+    data.defaultSubjectId || 'subj_cim10_default',
+    data.defaultClassroomId || null,
+    nowIso,
+    nowIso,
+    nowIso
+  );
+
+  // Assign roles
+  const rolesToAssign = new Set<UserRole>([data.role]);
+  if (Array.isArray(data.roles)) {
+    data.roles.forEach((r) => rolesToAssign.add(r));
+  }
+  if (canSwitch && !rolesToAssign.has('student')) {
+    rolesToAssign.add('student');
+  }
+
+  const insertRoleStmt = db.prepare('INSERT OR IGNORE INTO user_roles (id, user_id, role, assigned_at, assigned_by) VALUES (?, ?, ?, ?, ?)');
+  for (const r of Array.from(rolesToAssign)) {
+    insertRoleStmt.run(`ur_${id}_${r}`, id, r, nowIso, createdByAdminId || null);
+  }
+
+  // If classroom assigned, enroll in classroom_members
+  if (data.defaultClassroomId) {
+    db.prepare(`
+      INSERT OR IGNORE INTO classroom_members (id, classroom_id, user_id, member_role, joined_at)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(`cm_${data.defaultClassroomId}_${id}`, data.defaultClassroomId, id, data.role === 'student' ? 'student' : 'teacher', nowIso);
+  }
+
+  logSecurityEvent({
+    eventType: 'USER_CREATED',
+    severity: 'INFO',
+    userId: createdByAdminId,
+    route: '/api/admin/users',
+    details: `Usuario ${cleanUsername} (${data.role}) dado de alta con éxito en el sistema.`,
+  });
+
+  return {
+    id,
+    username: cleanUsername,
+    fullName,
+    firstName: data.firstName,
+    lastName: data.lastName,
+    dniNie: maskDni(rawDni),
+    email: data.email,
+    phone: data.phone,
+    academicGroup: data.academicGroup || 'DAS 26/27 - Grupo A',
+    role: data.role,
+    roles: Array.from(rolesToAssign),
+    courseId: data.courseId || 'DAS-26-27',
+    status: 'active',
+    enrolledAt: nowIso,
+    createdAt: nowIso,
+    canSwitchRole: canSwitch,
+    mustChangePassword: false,
+    defaultSubjectId: data.defaultSubjectId || 'subj_cim10_default',
+    defaultClassroomId: data.defaultClassroomId,
+  };
+}
+
+export function updateAdminUser(
+  userId: string,
+  data: Partial<{
+    fullName: string;
+    firstName: string;
+    lastName: string;
+    username: string;
+    dniNie: string;
+    email: string;
+    phone: string;
+    academicGroup: string;
+    role: UserRole;
+    status: 'active' | 'inactive';
+    canSwitchRole: boolean;
+    password?: string;
+    defaultSubjectId?: string;
+    defaultClassroomId?: string;
+  }>,
+  updatedByAdminId?: string
+): User & { roles: UserRole[] } {
+  const db = getDb();
+  const existing = getUserDetailsWithRoles(userId);
+  if (!existing) {
+    throw new Error('Usuario no encontrado.');
+  }
+
+  // Admin protection check: If deactivating an admin or changing role away from admin,
+  // ensure there remains at least one other active admin
+  if (existing.role === 'admin' && (data.status === 'inactive' || (data.role && data.role !== 'admin'))) {
+    const otherAdmins = (db.prepare(`
+      SELECT COUNT(*) as count 
+      FROM users 
+      WHERE (role = 'admin' OR id IN (SELECT user_id FROM user_roles WHERE role = 'admin'))
+        AND status = 'active'
+        AND id != ?
+    `).get(userId) as any)?.count || 0;
+
+    if (otherAdmins < 1) {
+      throw new Error('Acción bloqueada: No se puede desactivar o retirar privilegios al único administrador activo del sistema.');
+    }
+  }
+
+  const updates: string[] = [];
+  const params: any[] = [];
+  const nowIso = new Date().toISOString();
+
+  if (data.username !== undefined && data.username.trim()) {
+    const cleanU = data.username.trim().toLowerCase();
+    const collision = db.prepare('SELECT id FROM users WHERE LOWER(username) = ? AND id != ?').get(cleanU, userId);
+    if (collision) throw new Error(`El nombre de usuario '${cleanU}' ya está en uso.`);
+    updates.push('username = ?');
+    params.push(cleanU);
+  }
+
+  if (data.dniNie !== undefined && data.dniNie.trim()) {
+    const rawDni = data.dniNie.trim().toUpperCase();
+    const bindex = computeBlindIndex(rawDni);
+    const encryptedDni = encryptField(rawDni);
+    const collision = db.prepare('SELECT id FROM users WHERE (dni_bindex = ? OR UPPER(dni_nie) = ?) AND id != ?').get(bindex, rawDni, userId);
+    if (collision) throw new Error('El DNI/NIE introducido ya pertenece a otro usuario registrado.');
+    updates.push('dni_nie = ?', 'dni_bindex = ?');
+    params.push(encryptedDni, bindex);
+  }
+
+  if (data.fullName !== undefined) {
+    updates.push('full_name = ?');
+    params.push(data.fullName.trim());
+  }
+
+  if (data.firstName !== undefined) {
+    updates.push('first_name = ?');
+    params.push(data.firstName.trim());
+  }
+
+  if (data.lastName !== undefined) {
+    updates.push('last_name = ?');
+    params.push(data.lastName.trim());
+  }
+
+  if (data.email !== undefined) {
+    updates.push('email = ?');
+    params.push(data.email.trim().toLowerCase());
+  }
+
+  if (data.phone !== undefined) {
+    updates.push('phone = ?');
+    params.push(data.phone.trim() || null);
+  }
+
+  if (data.academicGroup !== undefined) {
+    updates.push('academic_group = ?');
+    params.push(data.academicGroup.trim());
+  }
+
+  if (data.role !== undefined) {
+    updates.push('role = ?');
+    params.push(data.role);
+    // ensure role is also mapped in user_roles
+    db.prepare('INSERT OR IGNORE INTO user_roles (id, user_id, role, assigned_at, assigned_by) VALUES (?, ?, ?, ?, ?)').run(
+      `ur_${userId}_${data.role}`,
+      userId,
+      data.role,
+      nowIso,
+      updatedByAdminId || null
+    );
+  }
+
+  if (data.status !== undefined) {
+    updates.push('status = ?');
+    params.push(data.status);
+    if (data.status === 'inactive') {
+      updates.push('unregistered_at = ?');
+      params.push(nowIso);
+    } else {
+      updates.push('unregistered_at = NULL');
+    }
+  }
+
+  if (data.canSwitchRole !== undefined) {
+    updates.push('can_switch_role = ?');
+    params.push(data.canSwitchRole ? 1 : 0);
+  }
+
+  if (data.defaultSubjectId !== undefined) {
+    updates.push('default_subject_id = ?');
+    params.push(data.defaultSubjectId || null);
+  }
+
+  if (data.defaultClassroomId !== undefined) {
+    updates.push('default_classroom_id = ?');
+    params.push(data.defaultClassroomId || null);
+    if (data.defaultClassroomId) {
+      db.prepare(`
+        INSERT OR IGNORE INTO classroom_members (id, classroom_id, user_id, member_role, joined_at)
+        VALUES (?, ?, ?, ?, ?)
+      `).run(`cm_${data.defaultClassroomId}_${userId}`, data.defaultClassroomId, userId, (data.role || existing.role) === 'student' ? 'student' : 'teacher', nowIso);
+    }
+  }
+
+  if (data.password && data.password.trim()) {
+    const { hash, salt } = hashPassword(data.password.trim());
+    updates.push('password_hash = ?', 'password_salt = ?', 'must_change_password = 0');
+    params.push(hash, salt);
+  }
+
+  if (updates.length > 0) {
+    updates.push('updated_at = ?');
+    params.push(nowIso);
+    params.push(userId);
+
+    db.prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`).run(...params);
+  }
+
+  logSecurityEvent({
+    eventType: 'USER_UPDATED',
+    severity: 'INFO',
+    userId: updatedByAdminId,
+    route: '/api/admin/users',
+    details: `Expediente de usuario ${existing.username} (${userId}) actualizado por administrador.`,
+  });
+
+  return getUserDetailsWithRoles(userId)!;
+}
+
+export function assignUserRole(userId: string, role: UserRole, assignedBy: string): UserRole[] {
+  const db = getDb();
+  const existing = getUserDetailsWithRoles(userId);
+  if (!existing) throw new Error('Usuario no encontrado.');
+
+  const nowIso = new Date().toISOString();
+  db.prepare(`
+    INSERT OR IGNORE INTO user_roles (id, user_id, role, assigned_at, assigned_by)
+    VALUES (?, ?, ?, ?, ?)
+  `).run(`ur_${userId}_${role}`, userId, role, nowIso, assignedBy);
+
+  // If assigning teacher or admin, also enable role switching capability
+  if (role === 'admin' || role === 'teacher') {
+    db.prepare('UPDATE users SET can_switch_role = 1, updated_at = ? WHERE id = ?').run(nowIso, userId);
+  }
+
+  logSecurityEvent({
+    eventType: 'ROLE_ASSIGNED',
+    severity: 'INFO',
+    userId: assignedBy,
+    route: '/api/admin/users/roles',
+    details: `Rol '${role}' asignado al usuario ${existing.username} por ${assignedBy}.`,
+  });
+
+  return getUserRoles(userId);
+}
+
+export function revokeUserRole(userId: string, role: UserRole, requestedBy: string): UserRole[] {
+  const db = getDb();
+  const existing = getUserDetailsWithRoles(userId);
+  if (!existing) throw new Error('Usuario no encontrado.');
+
+  // Strict check: Prevent removing the last admin
+  if (role === 'admin') {
+    const otherAdmins = (db.prepare(`
+      SELECT COUNT(DISTINCT user_id) as count 
+      FROM user_roles 
+      WHERE role = 'admin' AND user_id != ?
+    `).get(userId) as any)?.count || 0;
+
+    const baseAdmins = (db.prepare(`
+      SELECT COUNT(*) as count 
+      FROM users 
+      WHERE role = 'admin' AND status = 'active' AND id != ?
+    `).get(userId) as any)?.count || 0;
+
+    if (otherAdmins < 1 && baseAdmins < 1) {
+      throw new Error('Acción bloqueada: No se puede revocar el último acceso administrativo del sistema.');
+    }
+  }
+
+  db.prepare('DELETE FROM user_roles WHERE user_id = ? AND role = ?').run(userId, role);
+
+  // If primary role was revoked, adjust primary role to next available
+  const remainingRoles = getUserRoles(userId);
+  if (existing.role === role) {
+    const nextRole: UserRole = remainingRoles.length > 0 ? remainingRoles[0] : 'student';
+    db.prepare('UPDATE users SET role = ?, updated_at = ? WHERE id = ?').run(nextRole, new Date().toISOString(), userId);
+  }
+
+  logSecurityEvent({
+    eventType: 'ROLE_REVOKED',
+    severity: 'WARN',
+    userId: requestedBy,
+    route: '/api/admin/users/roles',
+    details: `Rol '${role}' revocado al usuario ${existing.username} por ${requestedBy}.`,
+  });
+
+  return getUserRoles(userId);
+}
+
+export function deleteAdminUser(userId: string, requestedBy: string): boolean {
+  const db = getDb();
+  const existing = getUserDetailsWithRoles(userId);
+  if (!existing) return false;
+
+  // Protect last admin
+  if (existing.roles.includes('admin') || existing.role === 'admin') {
+    const otherAdmins = (db.prepare(`
+      SELECT COUNT(*) as count 
+      FROM users 
+      WHERE (role = 'admin' OR id IN (SELECT user_id FROM user_roles WHERE role = 'admin'))
+        AND status = 'active'
+        AND id != ?
+    `).get(userId) as any)?.count || 0;
+
+    if (otherAdmins < 1) {
+      throw new Error('No se puede eliminar al único administrador del sistema.');
+    }
+  }
+
+  db.prepare('DELETE FROM user_roles WHERE user_id = ?').run(userId);
+  db.prepare('DELETE FROM classroom_members WHERE user_id = ?').run(userId);
+  db.prepare('DELETE FROM users WHERE id = ?').run(userId);
+
+  logSecurityEvent({
+    eventType: 'USER_DELETED',
+    severity: 'CRITICAL',
+    userId: requestedBy,
+    route: '/api/admin/users',
+    details: `Usuario ${existing.username} (${userId}) eliminado del sistema por ${requestedBy}.`,
+  });
+
+  return true;
+}
+
+// -------------------------------------------------------------
+// GESTIÓN DE MATERIAS Y AULAS (COURSE SUBJECTS & CLASSROOMS)
+// -------------------------------------------------------------
+
+export function getAllCourseSubjects(includeInactive = false): CourseSubject[] {
+  const db = getDb();
+  let sql = `
+    SELECT 
+      cs.*,
+      COUNT(DISTINCT cl.id) as classroom_count,
+      COUNT(DISTINCT cm.user_id) as student_count,
+      COUNT(DISTINCT tp.id) as topic_count
+    FROM course_subjects cs
+    LEFT JOIN classrooms cl ON cs.id = cl.subject_id AND cl.is_active = 1
+    LEFT JOIN classroom_members cm ON cl.id = cm.classroom_id
+    LEFT JOIN topics tp ON cs.id = tp.subject_id
+  `;
+  if (!includeInactive) {
+    sql += ' WHERE cs.is_active = 1';
+  }
+  sql += ' GROUP BY cs.id ORDER BY cs.name ASC';
+
+  const rows = db.prepare(sql).all() as any[];
+
+  return rows.map((r) => ({
+    id: r.id,
+    courseId: r.course_id || 'DAS-26-27',
+    code: r.code,
+    name: r.name,
+    description: r.description || undefined,
+    icon: r.icon || 'book',
+    isActive: Boolean(r.is_active),
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+    classroomCount: Number(r.classroom_count || 0),
+    studentCount: Number(r.student_count || 0),
+    topicCount: Number(r.topic_count || 0),
+  }));
+}
+
+export function getCourseSubjectById(id: string): CourseSubject | null {
+  const db = getDb();
+  const row = db.prepare('SELECT * FROM course_subjects WHERE id = ?').get(id) as any;
+  if (!row) return null;
+
+  return {
+    id: row.id,
+    courseId: row.course_id || 'DAS-26-27',
+    code: row.code,
+    name: row.name,
+    description: row.description || undefined,
+    icon: row.icon || 'book',
+    isActive: Boolean(row.is_active),
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export function createCourseSubject(
+  data: {
+    id?: string;
+    courseId?: string;
+    code: string;
+    name: string;
+    description?: string;
+    icon?: string;
+    isActive?: boolean;
+  },
+  createdBy?: string
+): CourseSubject {
+  const db = getDb();
+  const id = data.id || `subj_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+  const code = data.code.trim().toUpperCase();
+  const nowIso = new Date().toISOString();
+
+  const existing = db.prepare('SELECT id FROM course_subjects WHERE UPPER(code) = ?').get(code);
+  if (existing) {
+    throw new Error(`Ya existe una materia con el código '${code}'.`);
+  }
+
+  db.prepare(`
+    INSERT INTO course_subjects (id, course_id, code, name, description, icon, is_active, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    id,
+    data.courseId || 'DAS-26-27',
+    code,
+    data.name.trim(),
+    data.description ? data.description.trim() : null,
+    data.icon || 'book',
+    data.isActive !== false ? 1 : 0,
+    nowIso,
+    nowIso
+  );
+
+  logSecurityEvent({
+    eventType: 'SUBJECT_CREATED',
+    severity: 'INFO',
+    userId: createdBy,
+    route: '/api/admin/subjects',
+    details: `Materia '${data.name}' (${code}) creada correctamente.`,
+  });
+
+  return getCourseSubjectById(id)!;
+}
+
+export function updateCourseSubject(
+  id: string,
+  data: Partial<{
+    name: string;
+    code: string;
+    description: string;
+    icon: string;
+    isActive: boolean;
+  }>,
+  updatedBy?: string
+): CourseSubject {
+  const db = getDb();
+  const existing = getCourseSubjectById(id);
+  if (!existing) throw new Error('Materia no encontrada.');
+
+  const updates: string[] = [];
+  const params: any[] = [];
+  const nowIso = new Date().toISOString();
+
+  if (data.code !== undefined && data.code.trim()) {
+    const code = data.code.trim().toUpperCase();
+    const collision = db.prepare('SELECT id FROM course_subjects WHERE UPPER(code) = ? AND id != ?').get(code, id);
+    if (collision) throw new Error(`El código '${code}' ya está asignado a otra materia.`);
+    updates.push('code = ?');
+    params.push(code);
+  }
+
+  if (data.name !== undefined && data.name.trim()) {
+    updates.push('name = ?');
+    params.push(data.name.trim());
+  }
+
+  if (data.description !== undefined) {
+    updates.push('description = ?');
+    params.push(data.description.trim() || null);
+  }
+
+  if (data.icon !== undefined) {
+    updates.push('icon = ?');
+    params.push(data.icon.trim());
+  }
+
+  if (data.isActive !== undefined) {
+    updates.push('is_active = ?');
+    params.push(data.isActive ? 1 : 0);
+  }
+
+  if (updates.length > 0) {
+    updates.push('updated_at = ?');
+    params.push(nowIso);
+    params.push(id);
+
+    db.prepare(`UPDATE course_subjects SET ${updates.join(', ')} WHERE id = ?`).run(...params);
+  }
+
+  return getCourseSubjectById(id)!;
+}
+
+export function getAllClassrooms(subjectId?: string, includeInactive = false): Classroom[] {
+  const db = getDb();
+  let sql = `
+    SELECT 
+      cl.*,
+      cs.name as subject_name,
+      u.full_name as teacher_name,
+      COUNT(DISTINCT cm.user_id) as student_count
+    FROM classrooms cl
+    LEFT JOIN course_subjects cs ON cl.subject_id = cs.id
+    LEFT JOIN users u ON cl.teacher_id = u.id
+    LEFT JOIN classroom_members cm ON cl.id = cm.classroom_id AND cm.member_role = 'student'
+    WHERE 1=1
+  `;
+  const params: any[] = [];
+
+  if (subjectId && subjectId !== 'all') {
+    sql += ' AND cl.subject_id = ?';
+    params.push(subjectId);
+  }
+
+  if (!includeInactive) {
+    sql += ' AND cl.is_active = 1';
+  }
+
+  sql += ' GROUP BY cl.id ORDER BY cl.subject_id ASC, cl.name ASC';
+
+  const rows = db.prepare(sql).all(...params) as any[];
+
+  return rows.map((r) => ({
+    id: r.id,
+    subjectId: r.subject_id,
+    subjectName: r.subject_name || undefined,
+    courseId: r.course_id || 'DAS-26-27',
+    name: r.name,
+    code: r.code,
+    description: r.description || undefined,
+    teacherId: r.teacher_id || undefined,
+    teacherName: r.teacher_name || undefined,
+    academicYear: r.academic_year || 'DAS-26-27',
+    isActive: Boolean(r.is_active),
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+    studentCount: Number(r.student_count || 0),
+  }));
+}
+
+export function getClassroomById(id: string): Classroom | null {
+  const db = getDb();
+  const row = db.prepare(`
+    SELECT 
+      cl.*,
+      cs.name as subject_name,
+      u.full_name as teacher_name,
+      COUNT(DISTINCT cm.user_id) as student_count
+    FROM classrooms cl
+    LEFT JOIN course_subjects cs ON cl.subject_id = cs.id
+    LEFT JOIN users u ON cl.teacher_id = u.id
+    LEFT JOIN classroom_members cm ON cl.id = cm.classroom_id AND cm.member_role = 'student'
+    WHERE cl.id = ?
+    GROUP BY cl.id
+  `).get(id) as any;
+
+  if (!row) return null;
+
+  return {
+    id: row.id,
+    subjectId: row.subject_id,
+    subjectName: row.subject_name || undefined,
+    courseId: row.course_id || 'DAS-26-27',
+    name: row.name,
+    code: row.code,
+    description: row.description || undefined,
+    teacherId: row.teacher_id || undefined,
+    teacherName: row.teacher_name || undefined,
+    academicYear: row.academic_year || 'DAS-26-27',
+    isActive: Boolean(row.is_active),
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    studentCount: Number(row.student_count || 0),
+  };
+}
+
+export function createClassroom(
+  data: {
+    id?: string;
+    subjectId: string;
+    courseId?: string;
+    name: string;
+    code: string;
+    description?: string;
+    teacherId?: string;
+    academicYear?: string;
+  },
+  createdBy?: string
+): Classroom {
+  const db = getDb();
+  const id = data.id || `class_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+  const code = data.code.trim().toUpperCase();
+  const nowIso = new Date().toISOString();
+
+  const existing = db.prepare('SELECT id FROM classrooms WHERE UPPER(code) = ?').get(code);
+  if (existing) {
+    throw new Error(`Ya existe un aula con el código '${code}'.`);
+  }
+
+  db.prepare(`
+    INSERT INTO classrooms (id, subject_id, course_id, name, code, description, teacher_id, academic_year, is_active, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+  `).run(
+    id,
+    data.subjectId,
+    data.courseId || 'DAS-26-27',
+    data.name.trim(),
+    code,
+    data.description ? data.description.trim() : null,
+    data.teacherId || null,
+    data.academicYear || 'DAS-26-27',
+    nowIso,
+    nowIso
+  );
+
+  // If teacher assigned, enroll teacher as member
+  if (data.teacherId) {
+    db.prepare(`
+      INSERT OR IGNORE INTO classroom_members (id, classroom_id, user_id, member_role, joined_at)
+      VALUES (?, ?, ?, 'teacher', ?)
+    `).run(`cm_${id}_${data.teacherId}`, id, data.teacherId, nowIso);
+  }
+
+  logSecurityEvent({
+    eventType: 'CLASSROOM_CREATED',
+    severity: 'INFO',
+    userId: createdBy,
+    route: '/api/admin/classrooms',
+    details: `Aula '${data.name}' (${code}) creada en materia ${data.subjectId}.`,
+  });
+
+  return getClassroomById(id)!;
+}
+
+export function updateClassroom(
+  id: string,
+  data: Partial<{
+    name: string;
+    code: string;
+    description: string;
+    teacherId: string;
+    subjectId: string;
+    isActive: boolean;
+  }>,
+  updatedBy?: string
+): Classroom {
+  const db = getDb();
+  const existing = getClassroomById(id);
+  if (!existing) throw new Error('Aula no encontrada.');
+
+  const updates: string[] = [];
+  const params: any[] = [];
+  const nowIso = new Date().toISOString();
+
+  if (data.code !== undefined && data.code.trim()) {
+    const code = data.code.trim().toUpperCase();
+    const collision = db.prepare('SELECT id FROM classrooms WHERE UPPER(code) = ? AND id != ?').get(code, id);
+    if (collision) throw new Error(`El código '${code}' ya pertenece a otra aula.`);
+    updates.push('code = ?');
+    params.push(code);
+  }
+
+  if (data.name !== undefined && data.name.trim()) {
+    updates.push('name = ?');
+    params.push(data.name.trim());
+  }
+
+  if (data.description !== undefined) {
+    updates.push('description = ?');
+    params.push(data.description.trim() || null);
+  }
+
+  if (data.teacherId !== undefined) {
+    updates.push('teacher_id = ?');
+    params.push(data.teacherId || null);
+    if (data.teacherId) {
+      db.prepare(`
+        INSERT OR IGNORE INTO classroom_members (id, classroom_id, user_id, member_role, joined_at)
+        VALUES (?, ?, ?, 'teacher', ?)
+      `).run(`cm_${id}_${data.teacherId}`, id, data.teacherId, nowIso);
+    }
+  }
+
+  if (data.subjectId !== undefined) {
+    updates.push('subject_id = ?');
+    params.push(data.subjectId);
+  }
+
+  if (data.isActive !== undefined) {
+    updates.push('is_active = ?');
+    params.push(data.isActive ? 1 : 0);
+  }
+
+  if (updates.length > 0) {
+    updates.push('updated_at = ?');
+    params.push(nowIso);
+    params.push(id);
+
+    db.prepare(`UPDATE classrooms SET ${updates.join(', ')} WHERE id = ?`).run(...params);
+  }
+
+  return getClassroomById(id)!;
+}
+
+export function getClassroomMembers(classroomId: string): ClassroomMember[] {
+  const db = getDb();
+  const rows = db.prepare(`
+    SELECT cm.*, u.full_name as user_name, u.role as user_role
+    FROM classroom_members cm
+    JOIN users u ON cm.user_id = u.id
+    WHERE cm.classroom_id = ?
+    ORDER BY cm.member_role DESC, u.full_name ASC
+  `).all(classroomId) as any[];
+
+  return rows.map((r) => ({
+    id: r.id,
+    classroomId: r.classroom_id,
+    userId: r.user_id,
+    userName: r.user_name,
+    userRole: r.user_role,
+    memberRole: r.member_role as 'student' | 'teacher' | 'assistant',
+    joinedAt: r.joined_at,
+  }));
+}
+
+export function assignClassroomMember(
+  classroomId: string,
+  userId: string,
+  memberRole: 'student' | 'teacher' | 'assistant' = 'student'
+): boolean {
+  const db = getDb();
+  const nowIso = new Date().toISOString();
+  db.prepare(`
+    INSERT INTO classroom_members (id, classroom_id, user_id, member_role, joined_at)
+    VALUES (?, ?, ?, ?, ?)
+    ON CONFLICT(classroom_id, user_id) DO UPDATE SET member_role = excluded.member_role
+  `).run(`cm_${classroomId}_${userId}`, classroomId, userId, memberRole, nowIso);
+
+  // If student, update default_classroom_id
+  db.prepare('UPDATE users SET default_classroom_id = ? WHERE id = ?').run(classroomId, userId);
+
+  return true;
+}
+
+export function removeClassroomMember(classroomId: string, userId: string): boolean {
+  const db = getDb();
+  const res = db.prepare('DELETE FROM classroom_members WHERE classroom_id = ? AND user_id = ?').run(classroomId, userId);
+  return res.changes > 0;
 }

@@ -48,6 +48,18 @@ export interface TopicWithProgress extends Topic {
   attemptsCount?: number;
 }
 
+export interface SubjectMetricSummary {
+  id: string;
+  code: string;
+  name: string;
+  color?: string;
+  icon?: string;
+  totalTopics: number;
+  completedTopics: number;
+  totalTests: number;
+  averageScore: number;
+}
+
 export interface StudentLearningMetrics {
   totalTopics: number;
   totalSummariesRead: number;
@@ -55,7 +67,7 @@ export interface StudentLearningMetrics {
   globalStudyPercentage: number;
   totalTestsTaken: number;
   averageScore: number;
-  chronologicalCurve: Array<{ date: string; score: number; label: string; mode: string }>;
+  chronologicalCurve: Array<{ date: string; score: number; label: string; mode: string; subjectId?: string }>;
   topicsPerformance: Array<{
     slug: string;
     title: string;
@@ -64,12 +76,15 @@ export interface StudentLearningMetrics {
     averageScore: number;
     attemptsCount: number;
     status: 'need_reinforcement' | 'in_progress' | 'mastered';
+    subjectId?: string;
   }>;
   priorityReinforcements: Array<{
     topicTitle: string;
     reason: string;
     recommendation: string;
   }>;
+  subjects?: SubjectMetricSummary[];
+  selectedSubjectId?: string;
 }
 
 /**
@@ -248,11 +263,32 @@ export function recordTopicTestAttempt(
  * Calculate full student learning performance metrics for the SVG learning chart
  * Anti-IDOR: strictly derived from userId
  */
-export function getStudentLearningMetrics(userId: string): StudentLearningMetrics {
+export function getStudentLearningMetrics(userId: string, subjectId?: string): StudentLearningMetrics {
   const db = getDb();
 
-  // 1. Topics and Summaries
-  const topics = db.prepare('SELECT * FROM topics WHERE is_published = 1 ORDER BY sort_order ASC').all() as Topic[];
+  // 0. Query all course subjects for per-subject and overall aggregation
+  let dbSubjects: Array<{ id: string; code: string; name: string; color?: string; icon?: string }> = [];
+  try {
+    dbSubjects = db.prepare('SELECT id, code, name, icon, color FROM course_subjects WHERE is_active = 1 ORDER BY name ASC').all() as any[];
+  } catch {
+    dbSubjects = [];
+  }
+  if (dbSubjects.length === 0) {
+    dbSubjects = [{ id: 'subj_cim10_default', code: 'CIM10-DAS', name: 'Codificación Clínica CIM-10 · MEAP', color: '#2563eb', icon: 'book' }];
+  }
+
+  const effectiveSubjectFilter = subjectId && subjectId !== 'all' ? subjectId : null;
+
+  // 1. Topics and Summaries (filtered by subject if selected)
+  let topicsQuery = 'SELECT * FROM topics WHERE is_published = 1';
+  const topicsParams: any[] = [];
+  if (effectiveSubjectFilter) {
+    topicsQuery += ' AND (subject_id = ? OR (subject_id IS NULL AND ? = \'subj_cim10_default\'))';
+    topicsParams.push(effectiveSubjectFilter, effectiveSubjectFilter);
+  }
+  topicsQuery += ' ORDER BY sort_order ASC';
+
+  const topics = db.prepare(topicsQuery).all(...topicsParams) as Topic[];
   const totalTopics = topics.length;
 
   let totalSummariesAvailable = 0;
@@ -296,7 +332,8 @@ export function getStudentLearningMetrics(userId: string): StudentLearningMetric
       studyPercentage: studyPct,
       averageScore: avgScore,
       attemptsCount,
-      status
+      status,
+      subjectId: (t as any).subject_id || 'subj_cim10_default',
     });
   }
 
@@ -304,41 +341,53 @@ export function getStudentLearningMetrics(userId: string): StudentLearningMetric
     ? Math.min(100, Math.round((totalSummariesRead / totalSummariesAvailable) * 100))
     : 0;
 
-  // 2. Chronological accuracy curve from all student attempts
-  const curveRows: Array<{ created_at: string; score: number; label: string; mode: string }> = [];
+  // 2. Chronological accuracy curve from student attempts
+  const curveRows: Array<{ created_at: string; score: number; label: string; mode: string; subjectId?: string }> = [];
 
-  // Core attempts from test_attempts
-  const generalAttempts = db.prepare(`
-    SELECT score, created_at, discipline
-    FROM test_attempts
-    WHERE user_id = ?
-    ORDER BY created_at ASC
-  `).all(userId) as Array<{ score: number; created_at: string; discipline: string }>;
+  // Core attempts from test_attempts (filtered by subject if specified)
+  let generalAttemptsQuery = 'SELECT score, created_at, discipline, subject_id FROM test_attempts WHERE user_id = ?';
+  const generalParams: any[] = [userId];
+  if (effectiveSubjectFilter) {
+    generalAttemptsQuery += ' AND (subject_id = ? OR (subject_id IS NULL AND ? = \'subj_cim10_default\'))';
+    generalParams.push(effectiveSubjectFilter, effectiveSubjectFilter);
+  }
+  generalAttemptsQuery += ' ORDER BY created_at ASC';
+
+  const generalAttempts = db.prepare(generalAttemptsQuery).all(...generalParams) as Array<{ score: number; created_at: string; discipline: string; subject_id?: string }>;
 
   for (const a of generalAttempts) {
     curveRows.push({
       created_at: a.created_at,
       score: Math.min(10, Math.max(0, a.score)),
       label: a.discipline.replace('_', ' ').toUpperCase(),
-      mode: 'Prueba MEAP'
+      mode: 'Prueba MEAP',
+      subjectId: a.subject_id || 'subj_cim10_default',
     });
   }
 
-  // Topic attempts from topic_test_attempts
-  const topicAttempts = db.prepare(`
-    SELECT tta.score, tta.created_at, tta.mode, t.title
+  // Topic attempts from topic_test_attempts (filtered by subject if specified)
+  let topicAttemptsQuery = `
+    SELECT tta.score, tta.created_at, tta.mode, t.title, tta.subject_id
     FROM topic_test_attempts tta
     JOIN topics t ON tta.topic_id = t.id
     WHERE tta.user_id = ?
-    ORDER BY tta.created_at ASC
-  `).all(userId) as Array<{ score: number; created_at: string; mode: string; title: string }>;
+  `;
+  const topicParams: any[] = [userId];
+  if (effectiveSubjectFilter) {
+    topicAttemptsQuery += ' AND (tta.subject_id = ? OR t.subject_id = ? OR (tta.subject_id IS NULL AND ? = \'subj_cim10_default\'))';
+    topicParams.push(effectiveSubjectFilter, effectiveSubjectFilter, effectiveSubjectFilter);
+  }
+  topicAttemptsQuery += ' ORDER BY tta.created_at ASC';
+
+  const topicAttempts = db.prepare(topicAttemptsQuery).all(...topicParams) as Array<{ score: number; created_at: string; mode: string; title: string; subject_id?: string }>;
 
   for (const ta of topicAttempts) {
     curveRows.push({
       created_at: ta.created_at,
       score: Math.min(10, Math.max(0, ta.score)),
       label: ta.title,
-      mode: ta.mode === 'exam' ? 'Examen Tema' : ta.mode === 'reverse' ? 'Auditoría' : 'Kahoot'
+      mode: ta.mode === 'exam' ? 'Examen Tema' : ta.mode === 'reverse' ? 'Auditoría' : 'Kahoot',
+      subjectId: ta.subject_id || 'subj_cim10_default',
     });
   }
 
@@ -349,7 +398,8 @@ export function getStudentLearningMetrics(userId: string): StudentLearningMetric
     date: r.created_at.split('T')[0] || r.created_at,
     score: Math.round(r.score * 10) / 10,
     label: r.label,
-    mode: r.mode
+    mode: r.mode,
+    subjectId: r.subjectId,
   }));
 
   const totalTestsTaken = curveRows.length;
@@ -357,7 +407,48 @@ export function getStudentLearningMetrics(userId: string): StudentLearningMetric
     ? Math.round((curveRows.reduce((acc, c) => acc + c.score, 0) / totalTestsTaken) * 10) / 10
     : 0;
 
-  // 3. Priority Reinforcements
+  // 3. Calculate per-subject breakdown for student selector tabs
+  const subjectsBreakdown: SubjectMetricSummary[] = dbSubjects.map((s) => {
+    // Topic count for subject
+    const subjTopics = db.prepare('SELECT id FROM topics WHERE is_published = 1 AND (subject_id = ? OR (subject_id IS NULL AND ? = \'subj_cim10_default\'))').all(s.id, s.id) as Array<{ id: string }>;
+    const totalSubjTopics = subjTopics.length;
+
+    let completedSubjTopics = 0;
+    for (const st of subjTopics) {
+      const avail = (db.prepare('SELECT COUNT(*) as c FROM topic_summaries WHERE topic_id = ?').get(st.id) as any)?.c || 0;
+      const read = (db.prepare('SELECT COUNT(*) as c FROM topic_study_progress WHERE user_id = ? AND topic_id = ? AND completed = 1').get(userId, st.id) as any)?.c || 0;
+      if (avail > 0 && read >= avail) completedSubjTopics++;
+    }
+
+    // Attempts for subject
+    const directAttempts = db.prepare('SELECT score FROM test_attempts WHERE user_id = ? AND (subject_id = ? OR (subject_id IS NULL AND ? = \'subj_cim10_default\'))').all(userId, s.id, s.id) as Array<{ score: number }>;
+    const topicSubjAttempts = db.prepare(`
+      SELECT tta.score 
+      FROM topic_test_attempts tta 
+      JOIN topics t ON tta.topic_id = t.id 
+      WHERE tta.user_id = ? AND (tta.subject_id = ? OR t.subject_id = ? OR (tta.subject_id IS NULL AND ? = \'subj_cim10_default\'))
+    `).all(userId, s.id, s.id, s.id) as Array<{ score: number }>;
+
+    const allSubjScores = [...directAttempts.map((d) => d.score), ...topicSubjAttempts.map((t) => t.score)];
+    const totalTests = allSubjScores.length;
+    const avgSubjScore = totalTests > 0
+      ? Math.round((allSubjScores.reduce((acc, val) => acc + val, 0) / totalTests) * 10) / 10
+      : 0;
+
+    return {
+      id: s.id,
+      code: s.code,
+      name: s.name,
+      color: s.color || '#2563eb',
+      icon: s.icon || 'book',
+      totalTopics: totalSubjTopics,
+      completedTopics: completedSubjTopics,
+      totalTests,
+      averageScore: avgSubjScore,
+    };
+  });
+
+  // 4. Priority Reinforcements
   const priorityReinforcements: StudentLearningMetrics['priorityReinforcements'] = [];
   for (const tp of topicsPerformance) {
     if (tp.status === 'need_reinforcement') {
@@ -373,18 +464,17 @@ export function getStudentLearningMetrics(userId: string): StudentLearningMetric
       priorityReinforcements.push({
         topicTitle: tp.title,
         reason,
-        recommendation
+        recommendation,
       });
     }
   }
 
-  // If no critical areas, recommend next topic to study
   if (priorityReinforcements.length === 0 && topicsPerformance.length > 0) {
     const nextTopic = topicsPerformance.find((t) => t.studyPercentage < 100) || topicsPerformance[0];
     priorityReinforcements.push({
       topicTitle: nextTopic.title,
       reason: 'Ritmo de aprendizaje excelente. Mantén tu regularidad.',
-      recommendation: `Continúa avanzando en "${nextTopic.title}" para consolidar tu certificación.`
+      recommendation: `Continúa avanzando en "${nextTopic.title}" para consolidar tu certificación.`,
     });
   }
 
@@ -397,6 +487,8 @@ export function getStudentLearningMetrics(userId: string): StudentLearningMetric
     averageScore,
     chronologicalCurve,
     topicsPerformance,
-    priorityReinforcements: priorityReinforcements.slice(0, 3)
+    priorityReinforcements: priorityReinforcements.slice(0, 3),
+    subjects: subjectsBreakdown,
+    selectedSubjectId: effectiveSubjectFilter || 'all',
   };
 }

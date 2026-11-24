@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import { User } from '@/types';
+import { User, UserRole } from '@/types';
 import { signSessionToken, verifySessionToken } from './crypto';
 import { getUserById, logSecurityEvent, getGlobalSessionVersion } from '../db/queries';
 
@@ -7,8 +7,8 @@ export const SESSION_COOKIE_NAME = 'aulacim10_session';
 
 export interface SessionPayload {
   userId: string;
-  role: 'student' | 'admin';
-  activeRole: 'student' | 'admin';
+  role: UserRole;
+  activeRole: UserRole;
   canSwitchRole?: boolean;
   sessionVersion?: number;
   exp: number; // Unix timestamp
@@ -16,13 +16,13 @@ export interface SessionPayload {
 
 export async function setSessionCookie(
   user: User,
-  preferredActiveRole?: 'student' | 'admin'
+  preferredActiveRole?: UserRole
 ): Promise<void> {
   const cookieStore = await cookies();
   const exp = Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60; // 7 days
 
   // If user has canSwitchRole enabled, respect preferredActiveRole, otherwise default to user.role
-  const activeRole: 'student' | 'admin' =
+  const activeRole: UserRole =
     user.canSwitchRole && preferredActiveRole
       ? preferredActiveRole
       : user.activeRole || user.role;

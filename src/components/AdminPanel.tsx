@@ -29,6 +29,7 @@ import {
   PlusCircle,
   Loader2,
   X,
+  School,
 } from 'lucide-react';
 import Link from 'next/link';
 import CourseStudentsManager from './admin/CourseStudentsManager';
@@ -38,6 +39,8 @@ import VoiceTestCreator from './admin/VoiceTestCreator';
 import SecurityAuditViewer from './admin/SecurityAuditViewer';
 import SecurityEnvironmentPanel from './admin/SecurityEnvironmentPanel';
 import TopicManagerPanel from './admin/TopicManagerPanel';
+import UserManagerPanel from './admin/UserManagerPanel';
+import SubjectsClassroomsManager from './admin/SubjectsClassroomsManager';
 
 interface Props {
   adminUser: User;
@@ -49,7 +52,7 @@ interface Props {
 
 export default function AdminPanel({ adminUser, analytics, students, initialCourses, initialCourseId }: Props) {
   const [activeTab, setActiveTab] = useState<
-    'group' | 'course_students' | 'history_audit' | 'test_manager' | 'topic_manager' | 'voice_ai' | 'students' | 'report_gen' | 'notices' | 'backup' | 'security_logs' | 'security_soc'
+    'group' | 'users_roles' | 'subjects_classrooms' | 'course_students' | 'history_audit' | 'test_manager' | 'topic_manager' | 'voice_ai' | 'students' | 'report_gen' | 'notices' | 'backup' | 'security_logs' | 'security_soc'
   >('group');
 
   // Academic year / course selection state
@@ -420,6 +423,8 @@ export default function AdminPanel({ adminUser, analytics, students, initialCour
       <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-3">
         {[
           { id: 'group', label: 'Evolución del Grupo', icon: TrendingUp },
+          { id: 'users_roles', label: 'Usuarios y Roles', icon: Users },
+          { id: 'subjects_classrooms', label: 'Materias y Aulas', icon: School },
           { id: 'topic_manager', label: 'Temarios y PDFs (IA)', icon: BookOpen },
           { id: 'test_manager', label: 'Configurador de Pruebas', icon: Sliders },
           { id: 'course_students', label: 'Alumnos por Curso', icon: BookOpen },
@@ -543,6 +548,12 @@ export default function AdminPanel({ adminUser, analytics, students, initialCour
           </div>
         </div>
       )}
+
+      {/* TAB: GESTIÓN INTEGRAL DE USUARIOS Y ROLES */}
+      {activeTab === 'users_roles' && <UserManagerPanel />}
+
+      {/* TAB: GESTIÓN DE MATERIAS Y AULAS */}
+      {activeTab === 'subjects_classrooms' && <SubjectsClassroomsManager />}
 
       {/* TAB: ALUMNOS POR CURSO */}
       {activeTab === 'course_students' && (

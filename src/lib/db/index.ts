@@ -124,20 +124,31 @@ export function initDb(db: Database.Database): void {
     runColumnMigration('users', 'is_anonymized', 'INTEGER NOT NULL DEFAULT 0');
     runColumnMigration('users', 'anonymized_at', 'TEXT');
     runColumnMigration('users', 'updated_at', 'TEXT');
+    runColumnMigration('users', 'first_name', 'TEXT');
+    runColumnMigration('users', 'last_name', 'TEXT');
+    runColumnMigration('users', 'default_subject_id', "TEXT DEFAULT 'subj_cim10_default'");
+    runColumnMigration('users', 'default_classroom_id', 'TEXT');
+
+    // Table: topics
+    runColumnMigration('topics', 'subject_id', "TEXT NOT NULL DEFAULT 'subj_cim10_default'");
+    runColumnMigration('topics', 'classroom_id', 'TEXT');
 
     // Table: test_attempts
     runColumnMigration('test_attempts', 'course_id', "TEXT NOT NULL DEFAULT 'DAS-26-27'");
     runColumnMigration('test_attempts', 'test_id', 'TEXT');
     runColumnMigration('test_attempts', 'batch_id', 'TEXT');
     runColumnMigration('test_attempts', 'academic_year', "TEXT NOT NULL DEFAULT 'DAS-26-27'");
+    runColumnMigration('test_attempts', 'subject_id', "TEXT NOT NULL DEFAULT 'subj_cim10_default'");
+    runColumnMigration('test_attempts', 'classroom_id', 'TEXT');
     runColumnMigration('test_attempts', 'updated_at', 'TEXT');
 
-    // Table: questions
-    runColumnMigration('questions', 'batch_id', "TEXT NOT NULL DEFAULT 'seed_initial'");
-    runColumnMigration('questions', 'academic_year', "TEXT NOT NULL DEFAULT 'DAS-26-27'");
-    runColumnMigration('questions', 'error_category', "TEXT NOT NULL DEFAULT 'jerarquia_diagnostica'");
-    runColumnMigration('questions', 'service_context', "TEXT NOT NULL DEFAULT 'Servicio Clínico'");
-    runColumnMigration('questions', 'updated_at', 'TEXT');
+    // Table: topic_test_attempts
+    runColumnMigration('topic_test_attempts', 'subject_id', "TEXT NOT NULL DEFAULT 'subj_cim10_default'");
+    runColumnMigration('topic_test_attempts', 'classroom_id', 'TEXT');
+
+    // Table: active_exams
+    runColumnMigration('active_exams', 'subject_id', "TEXT NOT NULL DEFAULT 'subj_cim10_default'");
+    runColumnMigration('active_exams', 'classroom_id', 'TEXT');
 
     // Table: managed_tests
     runColumnMigration('managed_tests', 'course_id', "TEXT NOT NULL DEFAULT 'DAS-26-27'");
@@ -145,6 +156,8 @@ export function initDb(db: Database.Database): void {
     runColumnMigration('managed_tests', 'academic_year', "TEXT NOT NULL DEFAULT 'DAS-26-27'");
     runColumnMigration('managed_tests', 'test_type', "TEXT NOT NULL DEFAULT 'standard_meap'");
     runColumnMigration('managed_tests', 'status', "TEXT NOT NULL DEFAULT 'prepared'");
+    runColumnMigration('managed_tests', 'subject_id', "TEXT NOT NULL DEFAULT 'subj_cim10_default'");
+    runColumnMigration('managed_tests', 'classroom_id', 'TEXT');
     runColumnMigration('managed_tests', 'updated_at', 'TEXT');
 
     // Table: reverse_coding_cases
@@ -268,6 +281,72 @@ export function initDb(db: Database.Database): void {
     insertCourseTx();
   }
 
+  // 1d. Check and seed course_subjects if empty
+  try {
+    const subjCount = (db.prepare('SELECT COUNT(*) as count FROM course_subjects').get() as { count: number }).count;
+    if (subjCount === 0) {
+      const nowIso = new Date().toISOString();
+      const insertSubj = db.prepare(`
+        INSERT INTO course_subjects (id, course_id, code, name, description, icon, is_active, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)
+      `);
+      insertSubj.run(
+        'subj_cim10_default',
+        'DAS-26-27',
+        'CIM10-DAS',
+        'Codificación Clínica CIM-10 · MEAP',
+        'Materia troncal de Codificación Clínica y Gestión de Datos Sanitarios FHSJD (Diagnósticos, Procedimientos y Normativa Técnica)',
+        'stethoscope',
+        nowIso,
+        nowIso
+      );
+      insertSubj.run(
+        'subj_doc_sanitaria',
+        'DAS-26-27',
+        'DOC-SAN',
+        'Documentación y Administración Sanitaria',
+        'Gestión de historias clínicas, admisión, codificación de altas y archivo hospitalario',
+        'folder-git2',
+        nowIso,
+        nowIso
+      );
+    }
+
+    // 1e. Check and seed classrooms if empty
+    const classCount = (db.prepare('SELECT COUNT(*) as count FROM classrooms').get() as { count: number }).count;
+    if (classCount === 0) {
+      const nowIso = new Date().toISOString();
+      const insertClass = db.prepare(`
+        INSERT INTO classrooms (id, subject_id, course_id, name, code, description, academic_year, is_active, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+      `);
+      insertClass.run(
+        'classroom_das_a',
+        'subj_cim10_default',
+        'DAS-26-27',
+        'Aula A · Grupo Mañana (DAS 26/27)',
+        'AULA-DAS-A',
+        'Grupo presencial de mañana para prácticas de codificación clínica',
+        'DAS-26-27',
+        nowIso,
+        nowIso
+      );
+      insertClass.run(
+        'classroom_das_b',
+        'subj_cim10_default',
+        'DAS-26-27',
+        'Aula B · Grupo Tarde (DAS 26/27)',
+        'AULA-DAS-B',
+        'Grupo de tarde para supuestos clínicos y auditoría documental',
+        'DAS-26-27',
+        nowIso,
+        nowIso
+      );
+    }
+  } catch (subjErr) {
+    console.warn('Subjects/Classrooms seed note:', subjErr);
+  }
+
   // 2. Check and seed users (idempotent for all seed users)
   const insertUser = db.prepare(`
     INSERT OR IGNORE INTO users (
@@ -366,10 +445,10 @@ export function initDb(db: Database.Database): void {
             daughterUsername,
             hash,
             salt,
-            daughter.fullName || 'Alicia',
+            daughter.fullName || 'Laia Cachinero Baranda',
             encryptedDni,
             bindex,
-            daughter.email || 'alicia.estudiante@centro.local',
+            daughter.email || 'laia.cachinero@centro.local',
             daughter.phone || null,
             daughter.academicGroup || 'DAS 26/27 - Grupo A',
             daughter.role || 'student',
@@ -378,7 +457,7 @@ export function initDb(db: Database.Database): void {
             new Date().toISOString()
           );
         } else {
-          db.prepare('UPDATE users SET role = ?, can_switch_role = 1, password_hash = ?, password_salt = ?, dni_bindex = ? WHERE id = ?').run(daughter.role || 'student', hash, salt, bindex, existing.id);
+          db.prepare('UPDATE users SET role = ?, full_name = ?, can_switch_role = 1, password_hash = ?, password_salt = ?, dni_bindex = ? WHERE id = ?').run(daughter.role || 'student', daughter.fullName || 'Laia Cachinero Baranda', hash, salt, bindex, existing.id);
         }
       }
 
@@ -430,6 +509,32 @@ export function initDb(db: Database.Database): void {
     ensureCoreAccountsInDb(db);
   } catch (coreAccountsErr) {
     console.warn('Core institutional accounts seeding note:', coreAccountsErr);
+  }
+
+  // 2d. Synchronize user_roles multi-profile mapping
+  try {
+    const allUsers = db.prepare('SELECT id, role, can_switch_role, username FROM users').all() as Array<{ id: string; role: string; can_switch_role: number; username: string }>;
+    const checkRoleStmt = db.prepare('SELECT id FROM user_roles WHERE user_id = ? AND role = ?');
+    const insertRoleStmt = db.prepare('INSERT OR IGNORE INTO user_roles (id, user_id, role, assigned_at) VALUES (?, ?, ?, ?)');
+    const nowIso = new Date().toISOString();
+
+    for (const u of allUsers) {
+      if (!checkRoleStmt.get(u.id, u.role)) {
+        insertRoleStmt.run(`ur_${u.id}_${u.role}`, u.id, u.role, nowIso);
+      }
+      if (u.can_switch_role && (u.role === 'admin' || u.role === 'teacher')) {
+        if (!checkRoleStmt.get(u.id, 'student')) {
+          insertRoleStmt.run(`ur_${u.id}_student`, u.id, 'student', nowIso);
+        }
+      }
+      if (u.username.toLowerCase().includes('profesor') || u.id.includes('profesor')) {
+        if (!checkRoleStmt.get(u.id, 'teacher')) {
+          insertRoleStmt.run(`ur_${u.id}_teacher`, u.id, 'teacher', nowIso);
+        }
+      }
+    }
+  } catch (urErr) {
+    console.warn('user_roles sync note:', urErr);
   }
 
   // 3. Check and seed CIM-10 catalog if count == 0

@@ -39,15 +39,15 @@ export const CORE_ACCOUNTS: CoreAccountConfig[] = [
   {
     id: 'usr_core_hija_48069899Z',
     username: '48069899Z',
-    fullName: 'Alicia García Cachinero',
+    fullName: 'Laia Cachinero Baranda',
     dniNie: '48069899Z', // 48069899 mod 23 = 14 = Z
-    email: 'alicia.estudiante@centro.local',
+    email: 'laia.cachinero@centro.local',
     phone: '600123456',
     academicGroup: 'DAS 26/27 - Grupo A',
     role: 'student',
     canSwitchRole: true,
     mustChangePassword: false,
-    aliases: ['alicia', 'usr_daughter_dual', 'usr_student_01'],
+    aliases: ['laia', 'alicia', 'usr_daughter_dual', 'usr_student_01'],
     envVarName: 'DAUGHTER_PASSWORD',
     fallbackEncoded: 'MTIzNA==', // 1234
   },

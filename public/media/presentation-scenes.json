@@ -1,92 +1,185 @@
 ﻿[
-    {
-        "id":  1,
-        "estimatedSeconds":  38,
-        "narration":  "Hola a todos. Os damos una cordial bienvenida a la presentación de AulaCIM-10, la plataforma de entrenamiento clínico y codificación sanitaria desarrollada específicamente para los estudiantes del Ciclo Formativo de Grado Superior en Documentación y Administración Sanitarias, en su promoción 2026/2027. Nuestra misión en la Fundación Hospital San Juan de Dios siempre ha sido clara: tender un puente directo entre el aula formativa y la realidad asistencial de nuestros hospitales. Codificar no es simplemente memorizar códigos alfanuméricos... Codificar es comprender la historia clínica de un paciente, interpretar el juicio facultativo y garantizar la calidad de los datos del sistema sanitario. Y para lograr esa destreza, necesitábamos una herramienta a la altura de esa exigencia.",
-        "subtitle":  "Ciclo Formativo DAS · Promoción 2026/2027",
-        "title":  "Introducción y Misión Formativa FHSJD",
-        "bullets":  [
-                        "Fundación Hospital San Juan de Dios \u0026 Col·legi Santa Maria dels Frares",
-                        "Puente directo entre el aula académica y la práctica asistencial",
-                        "Codificación Clínica CIM-10: rigor, comprensión clínica y calidad del dato"
-                    ]
-    },
-    {
-        "id":  2,
-        "estimatedSeconds":  42,
-        "narration":  "AulaCIM-10 se estructura en torno a un índice modular. Junto al tronco principal de la clasificación CIM-10-ES, el profesorado puede incorporar unidades didácticas y apuntes complementarios en formato PDF. El sistema valida la integridad de cada archivo mediante inspección de cabeceras binarias y extrae el contenido pedagógico de forma completamente segura. Pero lo verdaderamente revolucionario es cómo transformamos esos apuntes en casos prácticos. La plataforma incorpora una cadena de generación en tres niveles secuenciales: Si disponemos de un modelo de inteligencia artificial local mediante Ollama, la generación es inmediata y privada. Si estamos conectados a la red, podemos apoyarnos en modelos en la nube. Y lo más importante... si no hay internet ni Ollama instalado, entra en acción nuestro Motor Clínico Offline Determinista. Un motor propio basado en las plantillas validadas de nuestros documentalistas del hospital, que asegura que jamás una clase o un examen se detenga por un problema técnico. Funciona siempre, al cien por cien.",
-        "subtitle":  "Importación Segura de PDFs y Autonomía sin Dependencias",
-        "title":  "Índice Multi-Tema y Generación Resiliente en 3 Niveles",
-        "bullets":  [
-                        "Importación de apuntes y guías en PDF con validación de cabecera mágica %PDF-",
-                        "Nivel 1: IA local mediante Ollama (100% privada)",
-                        "Nivel 2: Modelos en la nube institucionales (Cloud AI)",
-                        "Nivel 3: Motor Clínico Offline Determinista (resiliencia total sin internet)"
-                    ]
-    },
-    {
-        "id":  3,
-        "estimatedSeconds":  45,
-        "narration":  "El aprendizaje se articula bajo la metodología MEAP: entrenamiento adaptativo en cinco niveles progresivos, desde casos básicos monopatológicos hasta situaciones quirúrgicas y multidisciplinares de máxima complejidad. Cuando el estudiante responde, no recibe un simple correcto o incorrecto. La plataforma despliega una explicación razonada en cuatro bloques: el análisis clínico del caso, la ruta de búsqueda en el índice y tabla alfabética, la verificación de notas de exclusión o inclusión, y la justificación detallada de por qué cada una de las otras tres opciones es un distractor. Además, con el módulo de Codificación Inversa, el alumno aprende a auditar: se enfrenta a informes ya codificados con errores intencionados para detectar fallos de criterio. Y para las sesiones presenciales, el modo Kahoot de aula permite realizar rondas competitivas y dinámicas proyectadas en la pizarra digital.",
-        "subtitle":  "Entrenamiento Clínico Adaptativo y Gamificación en Aula",
-        "title":  "Metodología MEAP, Explicación en 4 Bloques y Práctica Inversa",
-        "bullets":  [
-                        "5 niveles progresivos: desde monopatologías hasta casos quirúrgicos complejos",
-                        "Resolución Razonada: Análisis Clínico, Ruta CIM-10, Reglas y Justificación de Distractores",
-                        "Módulo de Codificación Inversa: auditoría y detección activa de errores",
-                        "Kahoot de Aula: sesiones presenciales competitivas en pizarra digital"
-                    ]
-    },
-    {
-        "id":  4,
-        "estimatedSeconds":  30,
-        "narration":  "Cada alumno cuenta con su propia gráfica de rendimiento. El sistema monitoriza la tasa de acierto en cada ámbito asistencial —como Urgencias, Atención Primaria o Salud Mental— y señala automáticamente los capítulos donde se necesita refuerzo, ofreciendo un botón para repasar directamente los fallos cometidos. Asimismo, el canal de comunicación y chat institucional mantiene conectados a alumnos y profesores para resolver dudas puntuales o coordinar avisos de convocatorias de examen en un entorno seguro y profesional.",
-        "subtitle":  "Seguimiento Individualizado, Refuerzo y Convivencia Digital",
-        "title":  "Analítica Personalizada y Canal de Comunicación Docente",
-        "bullets":  [
-                        "Gráfica de rendimiento por ámbito asistencial y evolución temporal",
-                        "Detección de áreas de refuerzo prioritario y repaso guiado de fallos",
-                        "Chat institucional: canal general de aula y mensajes directos con docentes",
-                        "Canal protegido de convivencia académica sin cesión de datos"
-                    ]
-    },
-    {
-        "id":  5,
-        "estimatedSeconds":  45,
-        "narration":  "Tratándose de un entorno vinculado al sector sanitario, la seguridad y la privacidad son innegociables. AulaCIM-10 incorpora el estándar defensivo BancActiu Zero-Trust. Todos los datos identificativos, como el DNI o el teléfono, se almacenan cifrados en reposo mediante AES-256-GCM, y las búsquedas se realizan a través de índices ciegos con HMAC-SHA256, sin exponer jamás el documento original. Cumplimos con rigor el RGPD, la LOPDGDD y los criterios de la Autoridad Catalana de Protección de Datos: la edad mínima de acceso está fijada en 14 años, los alumnos pueden ejercer su derecho a la portabilidad descargando su expediente, y ante una baja, el sistema realiza una anonimización irreversible. Además, el equipo directivo dispone de un panel SOC en tiempo real con alertas gratuitas por correo y Telegram, y un pulsador de revocación global capaz de anular todas las sesiones activas en caso de sospecha.",
-        "subtitle":  "Cifrado AES-256-GCM, Blind Index HMAC y Panel SOC en Tiempo Real",
-        "title":  "Blindaje BancActiu Zero-Trust y RGPD por Diseño",
-        "bullets":  [
-                        "Cifrado de campos sensibles (DNI, teléfono) con AES-256-GCM y AuthTag",
-                        "Búsquedas mediante índices ciegos deterministas HMAC-SHA256",
-                        "Cumplimiento RGPD, LOPDGDD y APDCAT: edad mínima 14 años, portabilidad y anonimización",
-                        "Panel SOC con alertas gratuitas por Email y Telegram sin pasarelas SMS",
-                        "Revocación global inmediata de sesiones en caso de incidente"
-                    ]
-    },
-    {
-        "id":  6,
-        "estimatedSeconds":  38,
-        "narration":  "Para facilitar su implantación en cualquier instituto, AulaCIM-10 ofrece dos modalidades de despliegue: Por un lado, el entorno en la nube alojado en Vercel, en la región europea de París, con alta disponibilidad y acceso web seguro desde cualquier lugar. Por otro lado, nuestro paquete portable para colegios. Un archivo ZIP que no requiere instalar Node.js ni solicitar permisos de administrador. Gracias a su runtime portátil integrado y al lanzador nativo de Windows, basta con descomprimir la carpeta en un PC de aula o ejecutarlo desde un pendrive USB: en segundos, la aplicación se inicia de forma completamente autónoma, detectando puertos libres y lista para impartir clase.",
-        "subtitle":  "Soberanía de Datos en la Unión Europea y Máxima Autonomía Local",
-        "title":  "Despliegue Dual: Nube en Vercel y Modo Portable de Aula",
-        "bullets":  [
-                        "Producción en Vercel sobre región soberana cdg1 (París, UE)",
-                        "Paquete portable para PC de colegio (sin software preinstalado)",
-                        "Runtime portátil de Node.js embebido, cero instalación y cero permisos de administrador",
-                        "Lanzador nativo AulaCIM-10-Launcher.exe y script INICIAR-AULACIM10.bat"
-                    ]
-    },
-    {
-        "id":  7,
-        "estimatedSeconds":  25,
-        "narration":  "AulaCIM-10 es más que un software docente: es el compromiso conjunto de la Fundación Hospital San Juan de Dios y el Col·legi Santa Maria dels Frares con la excelencia académica, la ciberseguridad y el futuro de los profesionales de la documentación clínica. Muchas gracias por vuestra dedicación, y os deseamos un excelente curso 2026/2027.",
-        "subtitle":  "Fundación Hospital San Juan de Dios \u0026 Col·legi Santa Maria dels Frares",
-        "title":  "Compromiso con la Excelencia Educativa Sanitaria",
-        "bullets":  [
-                        "Formación clínica de vanguardia para futuros documentalistas sanitarios",
-                        "Innovación tecnológica al servicio del alumnado y del claustro docente",
-                        "Curso Académico 2026/2027"
-                    ]
+  {
+    "id": 1,
+    "featureKey": "auth_roles",
+    "title": "Introducción y Misión Formativa FHSJD",
+    "subtitle": "Ciclo Formativo DAS · Promoción 2026/2027",
+    "estimatedSeconds": 38,
+    "bullets": [
+      "Fundación Hospital San Juan de Dios & Col·legi Santa Maria dels Frares",
+      "Puente directo entre el aula académica y la práctica asistencial",
+      "Codificación Clínica CIM-10: rigor, comprensión clínica y calidad del dato"
+    ],
+    "narration": "Hola a todos. Os damos una cordial bienvenida a la presentación de AulaCIM-10, la plataforma de entrenamiento clínico y codificación sanitaria desarrollada específicamente para los estudiantes del Ciclo Formativo de Grado Superior en Documentación y Administración Sanitarias, en su promoción 2026/2027. Nuestra misión en la Fundación Hospital San Juan de Dios siempre ha sido clara: tender un puente directo entre el aula formativa y la realidad asistencial de nuestros hospitales. Codificar no es simplemente memorizar códigos alfanuméricos... Codificar es comprender la historia clínica de un paciente, interpretar el juicio facultativo y garantizar la calidad de los datos del sistema sanitario. Y para lograr esa destreza, necesitábamos una herramienta a la altura de esa exigencia.",
+    "featureExplanation": {
+      "functionTitle": "Acceso Seguro, Muro de Login y Roles RBAC",
+      "summary": "Muro de login estricto implementado con getSessionUser(): sin sesión verificada no se expone ningún contenido operativo (HTTP 401/403 en servidor). Modelo de roles tripartito (Alumno, Docente, Administrador) con conmutación dual de rol para supervisión pedagógica en tiempo real.",
+      "keyHighlights": [
+        "Muro de login obligatorio: portada restringida y redirección automática",
+        "Control de acceso RBAC por perfil (student, teacher, admin) y sesiones firmadas",
+        "Conmutador dual de roles para auditoría y verificación de vista de alumno",
+        "Protección contra revocación del último administrador activo del centro"
+      ],
+      "badge": "Muro de Login & Roles RBAC",
+      "simulation": "login"
     }
+  },
+  {
+    "id": 2,
+    "featureKey": "subjects_and_pdf_ai",
+    "title": "Materias, Aulas y Generación Resiliente en 3 Niveles",
+    "subtitle": "Importación Segura de PDFs y Autonomía sin Dependencias",
+    "estimatedSeconds": 42,
+    "bullets": [
+      "Gestión de múltiples materias del ciclo formativo y aulas simultáneas",
+      "Importación de apuntes en PDF con validación de cabecera mágica %PDF-",
+      "Nivel 1: IA local mediante Ollama (100% confidencial)",
+      "Nivel 2: Modelos Cloud institucionales para alta escala",
+      "Nivel 3: Motor Clínico Offline Determinista (resiliencia total sin internet)"
+    ],
+    "narration": "AulaCIM-10 se estructura en torno a un índice modular. Junto al tronco principal de la clasificación CIM-10-ES, el profesorado puede incorporar unidades didácticas y apuntes complementarios en formato PDF. El sistema valida la integridad de cada archivo mediante inspección de cabeceras binarias y extrae el contenido pedagógico de forma completamente segura. Pero lo verdaderamente revolucionario es cómo transformamos esos apuntes en casos prácticos. La plataforma incorpora una cadena de generación en tres niveles secuenciales: Si disponemos de un modelo de inteligencia artificial local mediante Ollama, la generación es inmediata y privada. Si estamos conectados a la red, podemos apoyarnos en modelos en la nube. Y lo más importante... si no hay internet ni Ollama instalado, entra en acción nuestro Motor Clínico Offline Determinista. Un motor propio basado en las plantillas validadas de nuestros documentalistas del hospital, que asegura que jamás una clase o un examen se detenga por un problema técnico. Funciona siempre, al cien por cien.",
+    "featureExplanation": {
+      "functionTitle": "Materias, Multi-Aula e Inferencia en 3 Niveles",
+      "summary": "Despliegue multi-materia con aulas paralelas independientes (Grupo Mañana, Tarde, Aula A, B). Carga protegida de PDFs con validación mágica %PDF- y generación pedagógica escalonada: IA Local (Ollama), IA Cloud o Motor Offline Determinista.",
+      "keyHighlights": [
+        "Aislamiento estricto de materias y aulas: ratios, docentes titulares y exámenes separados",
+        "Verificación de cabeceras binarias en subida de PDFs (antivirus/anti-malware)",
+        "Cadena de fallback triple: Ollama local → Cloud AI → Motor Offline Determinista",
+        "Garantía operativa: la clase o examen nunca se interrumpe ante cortes de red"
+      ],
+      "badge": "Multi-Materia & 3 Niveles IA",
+      "simulation": "pdf_ai"
+    }
+  },
+  {
+    "id": 3,
+    "featureKey": "meap_reasoned_tests",
+    "title": "Metodología MEAP, Explicación en 4 Bloques y Práctica Inversa",
+    "subtitle": "Entrenamiento Clínico Adaptativo y Gamificación en Aula",
+    "estimatedSeconds": 45,
+    "bullets": [
+      "5 niveles progresivos: desde monopatologías hasta casos quirúrgicos complejos",
+      "Resolución Razonada: Análisis Clínico, Ruta CIM-10, Reglas y Justificación de Distractores",
+      "Módulo de Codificación Inversa: auditoría y detección activa de errores",
+      "Kahoot de Aula: sesiones presenciales competitivas en pizarra digital"
+    ],
+    "narration": "El aprendizaje se articula bajo la metodología MEAP: entrenamiento adaptativo en cinco niveles progresivos, desde casos básicos monopatológicos hasta situaciones quirúrgicas y multidisciplinares de máxima complejidad. Cuando el estudiante responde, no recibe un simple correcto o incorrecto. La plataforma despliega una explicación razonada en cuatro bloques: el análisis clínico del caso, la ruta de búsqueda en el índice y tabla alfabética, la verificación de notas de exclusión o inclusión, y la justificación detallada de por qué cada una de las otras tres opciones es un distractor. Además, con el módulo de Codificación Inversa, el alumno aprende a auditar: se enfrenta a informes ya codificados con errores intencionados para detectar fallos de criterio. Y para las sesiones presenciales, el modo Kahoot de aula permite realizar rondas competitivas y dinámicas proyectadas en la pizarra digital.",
+    "featureExplanation": {
+      "functionTitle": "Evaluación MEAP y Explicación Razonada en 4 Bloques",
+      "summary": "Simulacros y exámenes oficiales con pedagogía profunda: cada opción incluye la justificación clínica de por qué es correcta o por qué es un distractor. Incluye auditoría clínica con Codificación Inversa y competición en pizarra digital mediante Kahoot.",
+      "keyHighlights": [
+        "Metodología MEAP: escala de dificultad clínica en 5 niveles de complejidad",
+        "Explicación en 4 bloques: Análisis Clínico, Ruta CIM-10, Reglas y Distractores",
+        "Codificación Inversa: desarrollo de competencias de auditoría diagnóstica",
+        "Kahoot de Aula con clasificación en tiempo real para sesiones dinámicas"
+      ],
+      "badge": "MEAP & Explicación Razonada",
+      "simulation": "test_exam"
+    }
+  },
+  {
+    "id": 4,
+    "featureKey": "learning_analytics_and_chat",
+    "title": "Analítica por Materia/En Conjunto y Chat Institucional",
+    "subtitle": "Seguimiento Individualizado, Refuerzo y Convivencia Digital",
+    "estimatedSeconds": 30,
+    "bullets": [
+      "Gráfica SVG de evolución filtrable por materia individual o en conjunto",
+      "Detección de áreas de refuerzo prioritario y repaso guiado de fallos",
+      "Chat institucional: canal general de aula y mensajes directos con docentes",
+      "Canal protegido de convivencia académica sin cesión de datos a terceros"
+    ],
+    "narration": "Cada alumno cuenta con su propia gráfica de rendimiento. El sistema monitoriza la tasa de acierto en cada ámbito asistencial —como Urgencias, Atención Primaria o Salud Mental— y señala automáticamente los capítulos donde se necesita refuerzo, ofreciendo un botón para repasar directamente los fallos cometidos. Asimismo, el canal de comunicación y chat institucional mantiene conectados a alumnos y profesores para resolver dudas puntuales o coordinar avisos de convocatorias de examen en un entorno seguro y profesional.",
+    "featureExplanation": {
+      "functionTitle": "Analítica de Progreso y Canal de Comunicación Docente",
+      "summary": "Curva cronológica interactiva en SVG con umbral de aprobado (5.0), filtrable por materia ('En Conjunto' o desglose individual). Conectado al chat de aula institucional para resolver dudas en tiempo real sin salir de la plataforma.",
+      "keyHighlights": [
+        "Curva SVG cronológica de precisión: evolución histórica de todas las pruebas",
+        "Pestañas de ámbito: 'En Conjunto' agregando materias o vista por asignatura",
+        "Mapeo de refuerzo prioritario generado por IA docente para repaso focalizado",
+        "Chat institucional con moderación docente, tablón de avisos y cero fugas PII"
+      ],
+      "badge": "Analítica SVG & Chat de Aula",
+      "simulation": "learning_chart"
+    }
+  },
+  {
+    "id": 5,
+    "featureKey": "soc_rgpd",
+    "title": "Blindaje BancActiu Zero-Trust y RGPD por Diseño",
+    "subtitle": "Cifrado AES-256-GCM, Blind Index HMAC y Panel SOC en Tiempo Real",
+    "estimatedSeconds": 45,
+    "bullets": [
+      "Cifrado de campos sensibles (DNI, teléfono) con AES-256-GCM y AuthTag",
+      "Búsquedas mediante índices ciegos deterministas HMAC-SHA256",
+      "Cumplimiento RGPD, LOPDGDD y APDCAT: edad mínima 14 años, portabilidad y anonimización",
+      "Panel SOC con alertas gratuitas por Email y Telegram sin pasarelas SMS",
+      "Revocación global inmediata de sesiones en caso de incidente"
+    ],
+    "narration": "Tratándose de un entorno vinculado al sector sanitario, la seguridad y la privacidad son innegociables. AulaCIM-10 incorpora el estándar defensivo BancActiu Zero-Trust. Todos los datos identificativos, como el DNI o el teléfono, se almacenan cifrados en reposo mediante AES-256-GCM, y las búsquedas se realizan a través de índices ciegos con HMAC-SHA256, sin exponer jamás el documento original. Cumplimos con rigor el RGPD, la LOPDGDD y los criterios de la Autoridad Catalana de Protección de Datos: la edad mínima de acceso está fijada en 14 años, los alumnos pueden ejercer su derecho a la portabilidad descargando su expediente, y ante una baja, el sistema realiza una anonimización irreversible. Además, el equipo directivo dispone de un panel SOC en tiempo real con alertas gratuitas por correo y Telegram, y un pulsador de revocación global capaz de anular todas las sesiones activas en caso de sospecha.",
+    "featureExplanation": {
+      "functionTitle": "Blindaje BancActiu, Panel SOC y RGPD por Defecto",
+      "summary": "Máxima protección de datos clínicos y personales conforme a RGPD, LOPDGDD y criterios APDCAT. Cifrado criptográfico en reposo, búsquedas ciegas sin descifrar, panel SOC con telemetría defensiva y alertas 100% gratuitas.",
+      "keyHighlights": [
+        "Cifrado AES-256-GCM con autenticación criptográfica en base de datos",
+        "Índice ciego HMAC-SHA256 para búsquedas deterministas sin revelar el DNI",
+        "Derechos RGPD: Portabilidad de expediente JSON (Art. 20) y Anonimización (Art. 17)",
+        "Panel SOC con alertas Webhook (Telegram) y SMTP gratuitas (sin costes de SMS)",
+        "Pulsador de Revocación Global inmediata de sesiones ante amenazas"
+      ],
+      "badge": "Zero-Trust & Panel SOC",
+      "simulation": "soc"
+    }
+  },
+  {
+    "id": 6,
+    "featureKey": "manuals_and_deployment",
+    "title": "Manuales por Rol y Despliegue Dual (Nube + Portable)",
+    "subtitle": "Soberanía de Datos en la Unión Europea y Máxima Autonomía Local",
+    "estimatedSeconds": 38,
+    "bullets": [
+      "Centro de manuales técnicos y pedagógicos en Markdown con acceso filtrado por rol",
+      "Producción en Vercel sobre región soberana cdg1 (París, UE)",
+      "Paquete portable para PC de colegio (sin software preinstalado)",
+      "Runtime portátil de Node.js embebido, cero instalación y cero permisos de administrador",
+      "Lanzador nativo AulaCIM-10-Launcher.exe y script INICIAR-AULACIM10.bat"
+    ],
+    "narration": "Para facilitar su implantación en cualquier instituto, AulaCIM-10 ofrece dos modalidades de despliegue: Por un lado, el entorno en la nube alojado en Vercel, en la región europea de París, con alta disponibilidad y acceso web seguro desde cualquier lugar. Por otro lado, nuestro paquete portable para colegios. Un archivo ZIP que no requiere instalar Node.js ni solicitar permisos de administrador. Gracias a su runtime portátil integrado y al lanzador nativo de Windows, basta con descomprimir la carpeta en un PC de aula o ejecutarlo desde un pendrive USB: en segundos, la aplicación se inicia de forma completamente autónoma, detectando puertos libres y lista para impartir clase.",
+    "featureExplanation": {
+      "functionTitle": "Manuales Filtrados por Rol y Despliegue Dual",
+      "summary": "Documentación viva con 4 manuales independientes filtrados por rol en API/UI (Alumno, Profesor, Administrador, Instituto IT). Despliegue flexible: Producción Vercel en la Unión Europea o paquete ZIP portable autónomo para PC de aula o pendrive USB.",
+      "keyHighlights": [
+        "Manuales por rol en Markdown: sin exposición de guías técnicas al alumnado",
+        "Producción en Vercel CDG1 (París, UE) con alta disponibilidad y certificado TLS",
+        "Paquete Portable de 211 MB: Runtime Node.js embebido, cero dependencias previas",
+        "Lanzador nativo Windows C# AulaCIM-10-Launcher.exe con detección inteligente de pantalla"
+      ],
+      "badge": "Manuales por Rol & Portable",
+      "simulation": "manuals"
+    }
+  },
+  {
+    "id": 7,
+    "featureKey": "institutional_closing",
+    "title": "Compromiso con la Excelencia Educativa Sanitaria",
+    "subtitle": "Fundación Hospital San Juan de Dios & Col·legi Santa Maria dels Frares",
+    "estimatedSeconds": 25,
+    "bullets": [
+      "Formación clínica de vanguardia para futuros documentalistas sanitarios",
+      "Innovación tecnológica al servicio del alumnado y del claustro docente",
+      "Curso Académico 2026/2027 · DAS FHSJD"
+    ],
+    "narration": "AulaCIM-10 es más que un software docente: es el compromiso conjunto de la Fundación Hospital San Juan de Dios y el Col·legi Santa Maria dels Frares con la excelencia académica, la ciberseguridad y el futuro de los profesionales de la documentación clínica. Muchas gracias por vuestra dedicación, y os deseamos un excelente curso 2026/2027.",
+    "featureExplanation": {
+      "functionTitle": "Excelencia Clínica y Formación Sanitaria del Futuro",
+      "summary": "Una solución integral que fusiona tecnología avanzada, rigor documental sanitario y pedagogía adaptativa para preparar con las máximas garantías a la promoción 2026/2027 del Ciclo Superior DAS.",
+      "keyHighlights": [
+        "Alineación curricular plena con el programa oficial de Documentación Sanitaria",
+        "Formación práctica basada en casos reales de hospitalización, cirugía y urgencias",
+        "Compromiso institucional permanente de soporte, actualización y evolución"
+      ],
+      "badge": "Excelencia FHSJD 26/27",
+      "simulation": "closing"
+    }
+  }
 ]

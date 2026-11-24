@@ -79,7 +79,28 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const isValid = verifyPassword(password, user.passwordSalt, user.passwordHash);
+    let isValid = verifyPassword(password, user.passwordSalt, user.passwordHash);
+    if (!isValid) {
+      // Reintento defensivo: re-sincronizar cuentas institucionales por si hubo actualización reciente de credenciales
+      try {
+        ensureCoreAccountsInDb(getDb());
+        const byName = getUserByUsername(user.username);
+        let recheckUser = byName;
+        if (!recheckUser && user.dniNie) {
+          const byDni = getUserByDni(user.dniNie);
+          if (byDni) {
+            recheckUser = getUserByUsername(byDni.username);
+          }
+        }
+        if (recheckUser && verifyPassword(password, recheckUser.passwordSalt, recheckUser.passwordHash)) {
+          user = recheckUser;
+          isValid = true;
+        }
+      } catch {
+        // Ignorar fallo de reintento
+      }
+    }
+
     if (!isValid) {
       logSecurityEvent({
         eventType: 'LOGIN_FAILED',

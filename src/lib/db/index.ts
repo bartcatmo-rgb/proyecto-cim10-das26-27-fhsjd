@@ -342,16 +342,18 @@ export function initDb(db: Database.Database): void {
     }
 
     if (seedData) {
-      // 1. Daughter dual account
+      // 1. Daughter student account
       const daughter = seedData.daughter;
       if (daughter && daughter.dniNie) {
         const rawDni = daughter.dniNie.trim().toUpperCase();
         const bindex = computeBlindIndex(rawDni);
         const encryptedDni = encryptField(rawDni);
+        const daughterUsername = (daughter.username || '48069899Z').trim().toLowerCase();
+        const rawPassword = daughter.password || '1234';
+        const { hash, salt } = hashPassword(rawPassword);
 
-        const existing = db.prepare('SELECT id FROM users WHERE dni_bindex = ? OR UPPER(dni_nie) = ? OR LOWER(username) = LOWER(?)').get(bindex, rawDni, daughter.username) as any;
+        const existing = db.prepare('SELECT id FROM users WHERE dni_bindex = ? OR UPPER(dni_nie) = ? OR LOWER(username) = ? OR LOWER(username) = ?').get(bindex, rawDni, daughterUsername, '48069899z') as any;
         if (!existing) {
-          const { hash, salt } = hashPassword(daughter.password || 'Alicia2026!');
           db.prepare(`
             INSERT INTO users (
               id, username, password_hash, password_salt, full_name, dni_nie, dni_bindex,
@@ -361,7 +363,7 @@ export function initDb(db: Database.Database): void {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', 1, 0, ?, 'v1.0-2026', ?)
           `).run(
             'usr_daughter_dual',
-            (daughter.username || 'alicia').trim().toLowerCase(),
+            daughterUsername,
             hash,
             salt,
             daughter.fullName || 'Alicia',
@@ -370,13 +372,13 @@ export function initDb(db: Database.Database): void {
             daughter.email || 'alicia.estudiante@centro.local',
             daughter.phone || null,
             daughter.academicGroup || 'DAS 26/27 - Grupo A',
-            'admin',
+            daughter.role || 'student',
             daughter.courseId || 'DAS-26-27',
             new Date().toISOString(),
             new Date().toISOString()
           );
         } else {
-          db.prepare('UPDATE users SET can_switch_role = 1, dni_bindex = ? WHERE id = ?').run(bindex, existing.id);
+          db.prepare('UPDATE users SET role = ?, can_switch_role = 1, password_hash = ?, password_salt = ?, dni_bindex = ? WHERE id = ?').run(daughter.role || 'student', hash, salt, bindex, existing.id);
         }
       }
 

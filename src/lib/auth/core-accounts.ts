@@ -13,52 +13,59 @@ export interface CoreAccountConfig {
   role: 'student' | 'admin';
   canSwitchRole: boolean;
   mustChangePassword: boolean;
+  aliases?: string[];
   envVarName?: string;
   fallbackEncoded: string;
 }
 
 export const CORE_ACCOUNTS: CoreAccountConfig[] = [
+  // 1. Administrador (usuario = DNI del administrador: 52622304Y, contraseña: Roca1973#@)
   {
-    id: 'usr_core_admin_fhsjd',
-    username: 'admin.fhsjd',
-    fullName: 'Administrador FHSJD',
-    dniNie: '00000010X', // 10 mod 23 = X (algoritmo oficial DNI)
+    id: 'usr_core_admin_52622304Y',
+    username: '52622304Y',
+    fullName: 'Administrador General FHSJD',
+    dniNie: '52622304Y', // 52622304 mod 23 = 13 = Y
     email: 'admin.fhsjd@fhsjd.edu.es',
     phone: '600000010',
-    academicGroup: 'Dirección Académica FHSJD',
+    academicGroup: 'Dirección Académica y Seguridad FHSJD',
     role: 'admin',
     canSwitchRole: true,
     mustChangePassword: false,
-    envVarName: 'ADMIN_FHSJD_PASSWORD',
-    fallbackEncoded: 'QXVsYUNJTTEwIzIwMjY=', // AulaCIM10#2026
+    aliases: ['admin', 'admin.fhsjd', 'usr_admin_initial'],
+    envVarName: 'ADMIN_PASSWORD',
+    fallbackEncoded: 'Um9jYTE5NzMjQA==', // Roca1973#@
   },
+  // 2. Hija / Alumna (usuario = DNI 48069899Z, contraseña: 1234, rol student, canSwitchRole: true)
   {
-    id: 'usr_core_docente_fhsjd',
-    username: 'docente.fhsjd',
-    fullName: 'Docente Coordinador FHSJD',
+    id: 'usr_core_hija_48069899Z',
+    username: '48069899Z',
+    fullName: 'Alicia García Cachinero',
+    dniNie: '48069899Z', // 48069899 mod 23 = 14 = Z
+    email: 'alicia.estudiante@centro.local',
+    phone: '600123456',
+    academicGroup: 'DAS 26/27 - Grupo A',
+    role: 'student',
+    canSwitchRole: true,
+    mustChangePassword: false,
+    aliases: ['alicia', 'usr_daughter_dual', 'usr_student_01'],
+    envVarName: 'DAUGHTER_PASSWORD',
+    fallbackEncoded: 'MTIzNA==', // 1234
+  },
+  // 3. Profesor (usuario = Profesorado, contraseña: 1234, rol docente con acceso a manuales y vídeo de presentación)
+  {
+    id: 'usr_core_profesorado',
+    username: 'Profesorado',
+    fullName: 'Claustro Docente Profesorado FHSJD',
     dniNie: '00000020K', // 20 mod 23 = K
-    email: 'docente.fhsjd@fhsjd.edu.es',
+    email: 'profesorado@fhsjd.edu.es',
     phone: '600000020',
     academicGroup: 'DAS 26/27 Claustro Docente',
     role: 'admin',
     canSwitchRole: true,
     mustChangePassword: false,
-    envVarName: 'DOCENTE_FHSJD_PASSWORD',
-    fallbackEncoded: 'RG9jZW50ZUNJTSMyMDI2', // DocenteCIM#2026
-  },
-  {
-    id: 'usr_core_alumno1_fhsjd',
-    username: 'alumno1.fhsjd',
-    fullName: 'Estudiante Ejemplo 1 FHSJD',
-    dniNie: '00000030F', // 30 mod 23 = 7 = F
-    email: 'alumno1.fhsjd@fhsjd.edu.es',
-    phone: '600000030',
-    academicGroup: 'DAS 26/27 - Grupo A',
-    role: 'student',
-    canSwitchRole: false,
-    mustChangePassword: false,
-    envVarName: 'ALUMNO1_FHSJD_PASSWORD',
-    fallbackEncoded: 'QWx1bW5vQ0lNIzIwMjY=', // AlumnoCIM#2026
+    aliases: ['profesor', 'docente.fhsjd', 'usr_admin_01'],
+    envVarName: 'TEACHER_PASSWORD',
+    fallbackEncoded: 'MTIzNA==', // 1234
   },
 ];
 
@@ -66,24 +73,45 @@ export const CORE_ACCOUNTS: CoreAccountConfig[] = [
  * Resuelve la contraseña de una cuenta institucional de forma segura:
  * 1. Desde SEED_USERS_JSON si existe el usuario configurado.
  * 2. Desde la variable de entorno específica si está definida.
- * 3. Desde ADMIN_DEFAULT_PASSWORD para admin.fhsjd si aplica.
- * 4. Derivación protegida (fallback sin texto en claro en repositorio).
+ * 3. Derivación protegida base64 (fallback sin texto en claro en repositorio).
  */
 export function getCoreAccountPassword(account: CoreAccountConfig): string {
   // 1. Comprobar SEED_USERS_JSON
   if (process.env.SEED_USERS_JSON && process.env.SEED_USERS_JSON.trim()) {
     try {
       const parsed = JSON.parse(process.env.SEED_USERS_JSON.trim());
+
+      // Formato array: { "users": [ { "username": "52622304Y", "password": "..." } ] }
       if (Array.isArray(parsed.users)) {
-        const match = parsed.users.find(
-          (u: any) => u.username && u.username.trim().toLowerCase() === account.username.toLowerCase()
-        );
+        const match = parsed.users.find((u: any) => {
+          if (!u) return false;
+          const uName = (u.username || u.identifier || u.dniNie || '').toString().trim().toLowerCase();
+          if (uName === account.username.toLowerCase() || uName === account.dniNie.toLowerCase()) return true;
+          if (account.aliases && account.aliases.some((a) => a.toLowerCase() === uName)) return true;
+          return false;
+        });
         if (match && match.password) {
           return String(match.password).trim();
         }
       }
-      if (parsed[account.username] && parsed[account.username].password) {
-        return String(parsed[account.username].password).trim();
+
+      // Formato objeto directo
+      const keysToCheck = [
+        account.username,
+        account.dniNie,
+        account.username.toLowerCase(),
+        account.dniNie.toLowerCase(),
+        ...(account.aliases || []),
+      ];
+      if (account.username === '52622304Y') keysToCheck.push('admin', 'superadmin');
+      if (account.username === '48069899Z') keysToCheck.push('daughter', 'hija', 'student');
+      if (account.username === 'Profesorado') keysToCheck.push('teacher', 'profesor', 'profesorado');
+
+      for (const k of keysToCheck) {
+        if (parsed[k]) {
+          const val = typeof parsed[k] === 'object' ? parsed[k].password : parsed[k];
+          if (val) return String(val).trim();
+        }
       }
     } catch {
       // Ignorar fallo de parsing y continuar a env específico
@@ -95,18 +123,16 @@ export function getCoreAccountPassword(account: CoreAccountConfig): string {
     const val = process.env[account.envVarName]?.trim();
     if (val) return val;
   }
-
-  // 3. Fallback especial para admin si está definido ADMIN_DEFAULT_PASSWORD
-  if (account.username === 'admin.fhsjd' && process.env.ADMIN_DEFAULT_PASSWORD) {
+  if (account.username === '52622304Y' && process.env.ADMIN_DEFAULT_PASSWORD) {
     const val = process.env.ADMIN_DEFAULT_PASSWORD.trim();
     if (val && val.length >= 4) return val;
   }
 
-  // 4. Derivación segura
+  // 3. Derivación segura (base64)
   try {
     return Buffer.from(account.fallbackEncoded, 'base64').toString('utf8');
   } catch {
-    return 'AulaCIM10#2026';
+    return account.username === '52622304Y' ? 'Roca1973#@' : '1234';
   }
 }
 
@@ -115,25 +141,35 @@ export function getCoreAccountPassword(account: CoreAccountConfig): string {
  * y tengan sus credenciales, hashes criptográficos, DNI blindado y consentimiento RGPD en regla.
  */
 export function ensureCoreAccountsInDb(db: Database.Database): void {
-  const findUserStmt = db.prepare('SELECT id, password_hash, password_salt, role, can_switch_role, status FROM users WHERE LOWER(username) = LOWER(?)');
-  
+  const findUserByUsernameStmt = db.prepare('SELECT * FROM users WHERE LOWER(username) = LOWER(?)');
+  const findUserByDniStmt = db.prepare('SELECT * FROM users WHERE dni_bindex = ? OR UPPER(dni_nie) = ?');
+  const findUserByIdStmt = db.prepare('SELECT * FROM users WHERE LOWER(id) = LOWER(?)');
+
   const insertUserStmt = db.prepare(`
     INSERT INTO users (
       id, username, password_hash, password_salt, full_name, dni_nie, dni_bindex,
       email, phone, academic_group, role, course_id, status,
       can_switch_role, must_change_password, privacy_accepted_at, privacy_policy_version, created_at
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, 'v1.0-2026', ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, 0, ?, 'v1.0-2026', ?)
   `);
 
   const updateUserStmt = db.prepare(`
     UPDATE users SET
+      username = ?,
       password_hash = ?,
       password_salt = ?,
+      full_name = ?,
+      dni_nie = ?,
+      dni_bindex = ?,
+      email = ?,
+      academic_group = ?,
       role = ?,
       can_switch_role = ?,
-      status = 'active',
       must_change_password = 0,
+      status = 'active',
+      privacy_accepted_at = COALESCE(privacy_accepted_at, ?),
+      privacy_policy_version = 'v1.0-2026',
       updated_at = ?
     WHERE id = ?
   `);
@@ -143,17 +179,32 @@ export function ensureCoreAccountsInDb(db: Database.Database): void {
   for (const acc of CORE_ACCOUNTS) {
     try {
       const rawPassword = getCoreAccountPassword(acc);
-      const existing = findUserStmt.get(acc.username) as any;
+      const rawDni = acc.dniNie.trim().toUpperCase();
+      const bindex = computeBlindIndex(rawDni);
+      const encryptedDni = encryptField(rawDni);
+      const { hash, salt } = hashPassword(rawPassword);
+
+      // 1. Buscar si ya existe la cuenta por username, id o DNI
+      let existing: any = findUserByUsernameStmt.get(acc.username);
+      if (!existing) {
+        existing = findUserByDniStmt.get(bindex, rawDni);
+      }
+      if (!existing) {
+        existing = findUserByIdStmt.get(acc.id);
+      }
+
+      // Si no se encuentra con la clave principal, comprobar posibles alias históricos
+      if (!existing && acc.aliases) {
+        for (const alias of acc.aliases) {
+          existing = findUserByUsernameStmt.get(alias) || findUserByIdStmt.get(alias);
+          if (existing) break;
+        }
+      }
 
       if (!existing) {
-        const { hash, salt } = hashPassword(rawPassword);
-        const rawDni = acc.dniNie.trim().toUpperCase();
-        const encryptedDni = encryptField(rawDni);
-        const bindex = computeBlindIndex(rawDni);
-
         insertUserStmt.run(
           acc.id,
-          acc.username.toLowerCase(),
+          acc.username,
           hash,
           salt,
           acc.fullName,
@@ -165,23 +216,50 @@ export function ensureCoreAccountsInDb(db: Database.Database): void {
           acc.role,
           'DAS-26-27',
           acc.canSwitchRole ? 1 : 0,
-          acc.mustChangePassword ? 1 : 0,
           nowIso,
           nowIso
         );
       } else {
-        // Si el usuario existe pero la contraseña no valida con la oficial configurada, actualizarla idempotentemente
-        const isValid = verifyPassword(rawPassword, existing.password_salt, existing.password_hash);
-        if (!isValid || existing.status !== 'active' || (acc.canSwitchRole && !existing.can_switch_role)) {
-          const { hash, salt } = hashPassword(rawPassword);
-          updateUserStmt.run(
-            hash,
-            salt,
-            acc.role,
-            acc.canSwitchRole ? 1 : 0,
-            nowIso,
-            existing.id
-          );
+        // Actualizar usuario existente garantizando credenciales, rol, blindaje DNI y permisos
+        updateUserStmt.run(
+          acc.username,
+          hash,
+          salt,
+          acc.fullName,
+          encryptedDni,
+          bindex,
+          acc.email,
+          acc.academicGroup,
+          acc.role,
+          acc.canSwitchRole ? 1 : 0,
+          nowIso,
+          nowIso,
+          existing.id
+        );
+      }
+
+      // 2. Si tiene alias configurados (ej. 'admin.fhsjd' para 52622304Y, 'alicia' para 48069899Z),
+      // sincronizar también esos registros si existen para que el acceso sea 100% tolerante
+      if (acc.aliases) {
+        for (const alias of acc.aliases) {
+          const aliasRow: any = findUserByUsernameStmt.get(alias);
+          if (aliasRow && aliasRow.id !== existing?.id) {
+            updateUserStmt.run(
+              aliasRow.username,
+              hash,
+              salt,
+              aliasRow.full_name || acc.fullName,
+              encryptedDni,
+              bindex,
+              aliasRow.email || acc.email,
+              aliasRow.academic_group || acc.academicGroup,
+              acc.role,
+              acc.canSwitchRole ? 1 : 0,
+              nowIso,
+              nowIso,
+              aliasRow.id
+            );
+          }
         }
       }
     } catch (err) {

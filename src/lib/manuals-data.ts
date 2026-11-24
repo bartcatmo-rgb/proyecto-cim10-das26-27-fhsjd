@@ -55,8 +55,11 @@ export function getEffectiveProfile(user: User): 'student' | 'teacher' | 'admin'
 
   const isAdminSpecific =
     user.username.toLowerCase().includes('admin') ||
+    user.username.toUpperCase() === '52622304Y' ||
+    user.dniNie === '52622304Y' ||
     user.academicGroup?.toLowerCase().includes('dirección') ||
-    user.id === 'usr_admin_initial';
+    user.id === 'usr_admin_initial' ||
+    user.id === 'usr_core_admin_52622304Y';
 
   if (isTeacherSpecific && !isAdminSpecific) {
     return 'teacher';

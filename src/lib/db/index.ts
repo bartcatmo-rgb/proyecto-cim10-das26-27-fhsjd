@@ -162,8 +162,25 @@ export function initDb(db: Database.Database): void {
 
     // Table: security_audit_logs
     runColumnMigration('security_audit_logs', 'severity', "TEXT NOT NULL DEFAULT 'INFO'");
+    runColumnMigration('security_audit_logs', 'route', 'TEXT');
+    runColumnMigration('security_audit_logs', 'ip_hash', 'TEXT');
     runColumnMigration('security_audit_logs', 'ip_address', 'TEXT');
+    runColumnMigration('security_audit_logs', 'user_agent_summary', 'TEXT');
     runColumnMigration('security_audit_logs', 'user_id', 'TEXT');
+    runColumnMigration('security_audit_logs', 'created_at', "TEXT NOT NULL DEFAULT (datetime('now'))");
+
+    // Table: system_security_settings
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS system_security_settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+    `);
+    const sessionVerExists = db.prepare("SELECT key FROM system_security_settings WHERE key = 'global_session_version'").get();
+    if (!sessionVerExists) {
+      db.prepare("INSERT INTO system_security_settings (key, value, updated_at) VALUES ('global_session_version', '1', ?)").run(new Date().toISOString());
+    }
 
     // Table: notices
     runColumnMigration('notices', 'is_pinned', 'INTEGER NOT NULL DEFAULT 0');

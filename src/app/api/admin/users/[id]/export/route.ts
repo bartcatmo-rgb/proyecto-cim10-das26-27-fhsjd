@@ -16,7 +16,8 @@ export async function GET(
     }
 
     logSecurityEvent({
-      eventType: 'RGPD_DATA_EXPORT',
+      eventType: 'RGPD_EXPORT',
+      route: `/api/admin/users/${id}/export`,
       userId: adminUser.id,
       severity: 'INFO',
       details: `Exportación de datos personales efectuada para el expediente ${id} por el docente ${adminUser.id}.`

@@ -316,9 +316,62 @@ export interface SecurityAuditLog {
   id: string;
   timestamp: string;
   eventType: string;
+  severity: 'INFO' | 'WARN' | 'WARNING' | 'CRITICAL';
+  route?: string;
+  ipHash?: string;
   ipAddress?: string;
+  userAgentSummary?: string;
   userId?: string;
-  severity: 'INFO' | 'WARNING' | 'CRITICAL';
   details: string;
+  createdAt?: string;
+}
+
+export interface SecurityKPIs {
+  blocks401_403: number;
+  loginFailuresRateLimit: number;
+  idorPrivilegeEscalation: number;
+  criticalAlerts: number;
+  rgpdActions: number;
+  totalEvents: number;
+}
+
+export interface SecurityEnvironmentStatus {
+  dataEncryptionKeyConfigured: boolean;
+  sessionSecretConfigured: boolean;
+  headersConfigured: {
+    hsts: boolean;
+    csp: boolean;
+    xFrameOptions: boolean;
+    nosniff: boolean;
+  };
+  region: string;
+  isEuSovereign: boolean;
+  databaseEngine: string;
+  aiPromptSanitizationActive: boolean;
+  globalSessionVersion: number;
+}
+
+export interface SecurityTimelineBucket {
+  period: string; // e.g. "14:00" or "2026-11-24"
+  label: string;
+  total: number;
+  critical: number;
+  warn: number;
+  info: number;
+}
+
+export interface SecurityOverviewResponse {
+  globalStatus: 'NORMAL' | 'VIGILANCIA' | 'ALERTA CRÍTICA';
+  kpis24h: SecurityKPIs;
+  kpis7d: SecurityKPIs;
+  environment: SecurityEnvironmentStatus;
+  timeDistribution: SecurityTimelineBucket[];
+  recentLogs: SecurityAuditLog[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
 }
 

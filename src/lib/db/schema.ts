@@ -233,10 +233,21 @@ CREATE TABLE IF NOT EXISTS security_audit_logs (
   id TEXT PRIMARY KEY,
   timestamp TEXT NOT NULL,
   event_type TEXT NOT NULL,
-  ip_address TEXT,
-  user_id TEXT,
   severity TEXT NOT NULL DEFAULT 'INFO',
-  details TEXT NOT NULL
+  route TEXT,
+  ip_hash TEXT,
+  ip_address TEXT,
+  user_agent_summary TEXT,
+  user_id TEXT,
+  details TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Parámetros Globales de Seguridad y Control de Sesión
+CREATE TABLE IF NOT EXISTS system_security_settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL,
+  updated_at TEXT NOT NULL
 );
 
 -- Arquitectura Multi-Tema: Gestión de Temarios y Contenidos Educativos
@@ -330,6 +341,9 @@ CREATE INDEX IF NOT EXISTS idx_managed_tests_code ON managed_tests(code);
 CREATE INDEX IF NOT EXISTS idx_managed_tests_status ON managed_tests(status, course_id);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_time ON security_audit_logs(timestamp);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_event ON security_audit_logs(event_type, severity);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_event_sev ON security_audit_logs(event_type, severity, timestamp);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_route ON security_audit_logs(route);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_created ON security_audit_logs(created_at);
 CREATE INDEX IF NOT EXISTS idx_topics_slug ON topics(slug);
 CREATE INDEX IF NOT EXISTS idx_topics_order ON topics(sort_order, is_published);
 CREATE INDEX IF NOT EXISTS idx_topic_summaries_topic ON topic_summaries(topic_id, sort_order);

@@ -25,9 +25,10 @@ export async function POST(
     }
 
     logSecurityEvent({
-      eventType: 'RGPD_DATA_ANONYMIZED',
+      eventType: 'RGPD_ANONYMIZE',
+      route: `/api/admin/users/${id}/anonymize`,
       userId: adminUser.id,
-      severity: 'WARNING',
+      severity: 'CRITICAL',
       details: `Supresión y anonimización irreversible ejecutada para el usuario ${id} por el docente ${adminUser.id}.`
     });
 

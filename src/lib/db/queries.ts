@@ -19,9 +19,15 @@ import {
   TestStatus,
   HistoricalAuditFilter,
   HistoricalAttemptRecord,
+  SecurityAuditLog,
+  SecurityKPIs,
+  SecurityEnvironmentStatus,
+  SecurityTimelineBucket,
+  SecurityOverviewResponse,
 } from '@/types';
 import { maskDni } from '../auth/crypto';
 import { encryptField, decryptField, computeBlindIndex, sanitizeForAudit } from '../field-crypto';
+import { hashIp, maskIp, summarizeUserAgent, sanitizeSecurityDetails } from '../security-telemetry';
 import crypto from 'crypto';
 
 // -------------------------------------------------------------
@@ -120,37 +126,114 @@ export function updateUserPassword(userId: string, passwordHash: string, passwor
   `).run(passwordHash, passwordSalt, userId);
 }
 
+// -------------------------------------------------------------
+// DEFENSIVE TELEMETRY & GLOBAL SESSION MANAGEMENT
+// -------------------------------------------------------------
+
+let cachedGlobalSessionVersion: number = 1;
+let lastSessionVersionCheck: number = 0;
+
+export function getGlobalSessionVersion(): number {
+  const now = Date.now();
+  if (now - lastSessionVersionCheck < 2000) {
+    return cachedGlobalSessionVersion;
+  }
+  try {
+    const db = getDb();
+    const row = db.prepare("SELECT value FROM system_security_settings WHERE key = 'global_session_version'").get() as any;
+    if (row && row.value) {
+      cachedGlobalSessionVersion = parseInt(row.value, 10) || 1;
+    } else {
+      db.prepare("INSERT OR IGNORE INTO system_security_settings (key, value, updated_at) VALUES ('global_session_version', '1', ?)").run(new Date().toISOString());
+      cachedGlobalSessionVersion = 1;
+    }
+  } catch {
+    // fallback to cached
+  }
+  lastSessionVersionCheck = now;
+  return cachedGlobalSessionVersion;
+}
+
+export function rotateGlobalSessionVersion(adminUserId?: string, adminUsername?: string): number {
+  const db = getDb();
+  const current = getGlobalSessionVersion();
+  const nextVer = current + 1;
+  const nowIso = new Date().toISOString();
+
+  db.prepare(`
+    INSERT INTO system_security_settings (key, value, updated_at)
+    VALUES ('global_session_version', ?, ?)
+    ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at
+  `).run(String(nextVer), nowIso);
+
+  cachedGlobalSessionVersion = nextVer;
+  lastSessionVersionCheck = Date.now();
+
+  logSecurityEvent({
+    eventType: 'SESSION_REVOKED',
+    severity: 'CRITICAL',
+    userId: adminUserId,
+    route: '/api/admin/security/actions',
+    details: `Revocación global de sesiones activas (versión incrementada a v${nextVer}) ejecutada por ${adminUsername || 'administrador'}.`,
+  });
+
+  return nextVer;
+}
+
 export function logSecurityEvent(event: {
   eventType: string;
+  severity?: 'INFO' | 'WARN' | 'WARNING' | 'CRITICAL';
+  route?: string;
   ipAddress?: string;
+  ipHash?: string;
+  userAgent?: string;
+  userAgentSummary?: string;
   userId?: string;
-  severity?: 'INFO' | 'WARNING' | 'CRITICAL';
   details: string;
 }): void {
   try {
     const db = getDb();
     const id = `sec_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
-    // Zero PII in audit logs: sanitize details
-    const cleanDetails = sanitizeForAudit(event.details).substring(0, 500);
+    const timestamp = new Date().toISOString();
+
+    // Normalize severity
+    let normalizedSeverity: 'INFO' | 'WARN' | 'CRITICAL' = 'INFO';
+    if (event.severity === 'CRITICAL') normalizedSeverity = 'CRITICAL';
+    else if (event.severity === 'WARN' || event.severity === 'WARNING') normalizedSeverity = 'WARN';
+
+    // Zero PII: sanitize details
+    const cleanDetails = sanitizeSecurityDetails(event.details).substring(0, 500);
+
+    // Compute IP Hash and Masked IP
+    const rawIp = event.ipAddress?.trim();
+    const computedIpHash = event.ipHash || (rawIp ? hashIp(rawIp) : 'ip_anon');
+    const maskedIp = rawIp ? maskIp(rawIp) : null;
+
+    // Compute User Agent Summary
+    const uaSummary = event.userAgentSummary || (event.userAgent ? summarizeUserAgent(event.userAgent) : null);
 
     db.prepare(`
-      INSERT INTO security_audit_logs (id, timestamp, event_type, ip_address, user_id, severity, details)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO security_audit_logs (id, timestamp, event_type, severity, route, ip_hash, ip_address, user_agent_summary, user_id, details, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       id,
-      new Date().toISOString(),
+      timestamp,
       event.eventType,
-      event.ipAddress || null,
+      normalizedSeverity,
+      event.route || null,
+      computedIpHash,
+      maskedIp,
+      uaSummary,
       event.userId || null,
-      event.severity || 'INFO',
-      cleanDetails
+      cleanDetails,
+      timestamp
     );
   } catch (err) {
-    console.warn('Failed to log security event:', err);
+    console.warn('Defensive telemetry logging note:', err);
   }
 }
 
-export function getSecurityAuditLogs(limit = 100): any[] {
+export function getSecurityAuditLogs(limit = 100): SecurityAuditLog[] {
   const db = getDb();
   const rows = db.prepare(`
     SELECT * FROM security_audit_logs ORDER BY timestamp DESC LIMIT ?
@@ -160,11 +243,231 @@ export function getSecurityAuditLogs(limit = 100): any[] {
     id: r.id,
     timestamp: r.timestamp,
     eventType: r.event_type,
+    severity: (r.severity === 'WARNING' ? 'WARN' : r.severity) as 'INFO' | 'WARN' | 'CRITICAL',
+    route: r.route || undefined,
+    ipHash: r.ip_hash || undefined,
     ipAddress: r.ip_address || undefined,
+    userAgentSummary: r.user_agent_summary || undefined,
     userId: r.user_id || undefined,
-    severity: r.severity as 'INFO' | 'WARNING' | 'CRITICAL',
     details: r.details,
+    createdAt: r.created_at || r.timestamp,
   }));
+}
+
+export function getSecurityOverview(options: {
+  page?: number;
+  limit?: number;
+  severity?: string;
+  eventType?: string;
+  search?: string;
+} = {}): SecurityOverviewResponse {
+  const db = getDb();
+  const page = Math.max(1, options.page || 1);
+  const limit = Math.min(100, Math.max(10, options.limit || 50));
+  const offset = (page - 1) * limit;
+
+  // 1. KPIs for last 24 hours
+  const kpi24hRow = db.prepare(`
+    SELECT
+      COALESCE(SUM(CASE WHEN event_type IN ('UNAUTHORIZED_401', 'FORBIDDEN_403', 'FORBIDDEN_ADMIN_API_ACCESS') THEN 1 ELSE 0 END), 0) as blocks401_403,
+      COALESCE(SUM(CASE WHEN event_type IN ('LOGIN_FAILED', 'AUTH_FAILED', 'RATE_LIMIT_BLOCKED', 'RATE_LIMIT_TRIGGERED') THEN 1 ELSE 0 END), 0) as loginFailuresRateLimit,
+      COALESCE(SUM(CASE WHEN event_type IN ('IDOR_BLOCKED', 'IDOR_VIOLATION_ATTEMPT', 'PRIVILEGE_ESCALATION_ATTEMPT') THEN 1 ELSE 0 END), 0) as idorPrivilegeEscalation,
+      COALESCE(SUM(CASE WHEN severity = 'CRITICAL' THEN 1 ELSE 0 END), 0) as criticalAlerts,
+      COALESCE(SUM(CASE WHEN event_type IN ('RGPD_EXPORT', 'RGPD_ANONYMIZE') THEN 1 ELSE 0 END), 0) as rgpdActions,
+      COUNT(*) as totalEvents
+    FROM security_audit_logs
+    WHERE timestamp >= datetime('now', '-24 hours')
+  `).get() as any;
+
+  // 2. KPIs for last 7 days
+  const kpi7dRow = db.prepare(`
+    SELECT
+      COALESCE(SUM(CASE WHEN event_type IN ('UNAUTHORIZED_401', 'FORBIDDEN_403', 'FORBIDDEN_ADMIN_API_ACCESS') THEN 1 ELSE 0 END), 0) as blocks401_403,
+      COALESCE(SUM(CASE WHEN event_type IN ('LOGIN_FAILED', 'AUTH_FAILED', 'RATE_LIMIT_BLOCKED', 'RATE_LIMIT_TRIGGERED') THEN 1 ELSE 0 END), 0) as loginFailuresRateLimit,
+      COALESCE(SUM(CASE WHEN event_type IN ('IDOR_BLOCKED', 'IDOR_VIOLATION_ATTEMPT', 'PRIVILEGE_ESCALATION_ATTEMPT') THEN 1 ELSE 0 END), 0) as idorPrivilegeEscalation,
+      COALESCE(SUM(CASE WHEN severity = 'CRITICAL' THEN 1 ELSE 0 END), 0) as criticalAlerts,
+      COALESCE(SUM(CASE WHEN event_type IN ('RGPD_EXPORT', 'RGPD_ANONYMIZE') THEN 1 ELSE 0 END), 0) as rgpdActions,
+      COUNT(*) as totalEvents
+    FROM security_audit_logs
+    WHERE timestamp >= datetime('now', '-7 days')
+  `).get() as any;
+
+  const kpis24h: SecurityKPIs = {
+    blocks401_403: Number(kpi24hRow?.blocks401_403 || 0),
+    loginFailuresRateLimit: Number(kpi24hRow?.loginFailuresRateLimit || 0),
+    idorPrivilegeEscalation: Number(kpi24hRow?.idorPrivilegeEscalation || 0),
+    criticalAlerts: Number(kpi24hRow?.criticalAlerts || 0),
+    rgpdActions: Number(kpi24hRow?.rgpdActions || 0),
+    totalEvents: Number(kpi24hRow?.totalEvents || 0),
+  };
+
+  const kpis7d: SecurityKPIs = {
+    blocks401_403: Number(kpi7dRow?.blocks401_403 || 0),
+    loginFailuresRateLimit: Number(kpi7dRow?.loginFailuresRateLimit || 0),
+    idorPrivilegeEscalation: Number(kpi7dRow?.idorPrivilegeEscalation || 0),
+    criticalAlerts: Number(kpi7dRow?.criticalAlerts || 0),
+    rgpdActions: Number(kpi7dRow?.rgpdActions || 0),
+    totalEvents: Number(kpi7dRow?.totalEvents || 0),
+  };
+
+  // 3. Global status determination
+  let globalStatus: 'NORMAL' | 'VIGILANCIA' | 'ALERTA CRÍTICA' = 'NORMAL';
+  if (kpis24h.criticalAlerts > 0 || kpis24h.idorPrivilegeEscalation >= 3) {
+    globalStatus = 'ALERTA CRÍTICA';
+  } else if (kpis24h.loginFailuresRateLimit >= 5 || kpis24h.blocks401_403 >= 10) {
+    globalStatus = 'VIGILANCIA';
+  }
+
+  // 4. Environment health status
+  const isVercelServerless = process.env.VERCEL === '1' || Boolean(process.env.AWS_LAMBDA_FUNCTION_NAME);
+  const environment: SecurityEnvironmentStatus = {
+    dataEncryptionKeyConfigured: Boolean(process.env.DATA_ENCRYPTION_KEY && process.env.DATA_ENCRYPTION_KEY.trim().length >= 16),
+    sessionSecretConfigured: Boolean(process.env.SESSION_SECRET && process.env.SESSION_SECRET.trim().length >= 32),
+    headersConfigured: {
+      hsts: true,
+      csp: true,
+      xFrameOptions: true,
+      nosniff: true,
+    },
+    region: process.env.VERCEL_REGION || (process.env.VERCEL ? 'cdg1 (París, UE)' : 'Local EEE (cdg1)'),
+    isEuSovereign: true,
+    databaseEngine: isVercelServerless ? 'SQLite Serverless (/tmp/cim10_centro.db)' : 'SQLite WAL (./data/cim10_centro.db)',
+    aiPromptSanitizationActive: true,
+    globalSessionVersion: getGlobalSessionVersion(),
+  };
+
+  // 5. Timeline buckets (12 buckets of 2 hours covering last 24 hours)
+  const timelineBuckets: SecurityTimelineBucket[] = [];
+  const now = new Date();
+  for (let i = 11; i >= 0; i--) {
+    const bucketStart = new Date(now.getTime() - (i + 1) * 2 * 3600 * 1000);
+    const bucketEnd = new Date(now.getTime() - i * 2 * 3600 * 1000);
+    const startIso = bucketStart.toISOString();
+    const endIso = bucketEnd.toISOString();
+
+    const bucketRow = db.prepare(`
+      SELECT
+        COUNT(*) as total,
+        COALESCE(SUM(CASE WHEN severity = 'CRITICAL' THEN 1 ELSE 0 END), 0) as critical,
+        COALESCE(SUM(CASE WHEN severity IN ('WARN', 'WARNING') THEN 1 ELSE 0 END), 0) as warn,
+        COALESCE(SUM(CASE WHEN severity = 'INFO' THEN 1 ELSE 0 END), 0) as info
+      FROM security_audit_logs
+      WHERE timestamp >= ? AND timestamp < ?
+    `).get(startIso, endIso) as any;
+
+    const hourStr = bucketEnd.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    timelineBuckets.push({
+      period: startIso,
+      label: hourStr,
+      total: Number(bucketRow?.total || 0),
+      critical: Number(bucketRow?.critical || 0),
+      warn: Number(bucketRow?.warn || 0),
+      info: Number(bucketRow?.info || 0),
+    });
+  }
+
+  // 6. Filtered Paginated Logs
+  const whereClauses: string[] = [];
+  const queryParams: any[] = [];
+
+  if (options.severity && options.severity !== 'ALL') {
+    if (options.severity === 'WARN') {
+      whereClauses.push("severity IN ('WARN', 'WARNING')");
+    } else {
+      whereClauses.push("severity = ?");
+      queryParams.push(options.severity);
+    }
+  }
+
+  if (options.eventType && options.eventType !== 'ALL') {
+    whereClauses.push("event_type = ?");
+    queryParams.push(options.eventType);
+  }
+
+  if (options.search && options.search.trim()) {
+    const term = `%${options.search.trim().toLowerCase()}%`;
+    whereClauses.push("(LOWER(details) LIKE ? OR LOWER(COALESCE(route, '')) LIKE ? OR LOWER(COALESCE(ip_hash, '')) LIKE ? OR LOWER(event_type) LIKE ?)");
+    queryParams.push(term, term, term, term);
+  }
+
+  const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+
+  const totalCountRow = db.prepare(`
+    SELECT COUNT(*) as count FROM security_audit_logs ${whereSql}
+  `).get(...queryParams) as any;
+  const totalCount = Number(totalCountRow?.count || 0);
+
+  const logsRows = db.prepare(`
+    SELECT * FROM security_audit_logs
+    ${whereSql}
+    ORDER BY timestamp DESC
+    LIMIT ? OFFSET ?
+  `).all(...queryParams, limit, offset) as any[];
+
+  const recentLogs: SecurityAuditLog[] = logsRows.map((r) => ({
+    id: r.id,
+    timestamp: r.timestamp,
+    eventType: r.event_type,
+    severity: (r.severity === 'WARNING' ? 'WARN' : r.severity) as 'INFO' | 'WARN' | 'CRITICAL',
+    route: r.route || undefined,
+    ipHash: r.ip_hash || undefined,
+    ipAddress: r.ip_address || undefined,
+    userAgentSummary: r.user_agent_summary || undefined,
+    userId: r.user_id || undefined,
+    details: r.details,
+    createdAt: r.created_at || r.timestamp,
+  }));
+
+  return {
+    globalStatus,
+    kpis24h,
+    kpis7d,
+    environment,
+    timeDistribution: timelineBuckets,
+    recentLogs,
+    pagination: {
+      total: totalCount,
+      page,
+      limit,
+      totalPages: Math.ceil(totalCount / limit) || 1,
+    },
+  };
+}
+
+export function exportSecurityAuditLogs(): {
+  exportedAt: string;
+  sha256Checksum: string;
+  count: number;
+  logs: SecurityAuditLog[];
+} {
+  const db = getDb();
+  const rows = db.prepare(`
+    SELECT * FROM security_audit_logs ORDER BY timestamp DESC LIMIT 2000
+  `).all() as any[];
+
+  const logs: SecurityAuditLog[] = rows.map((r) => ({
+    id: r.id,
+    timestamp: r.timestamp,
+    eventType: r.event_type,
+    severity: (r.severity === 'WARNING' ? 'WARN' : r.severity) as 'INFO' | 'WARN' | 'CRITICAL',
+    route: r.route || undefined,
+    ipHash: r.ip_hash || undefined,
+    ipAddress: r.ip_address || undefined,
+    userAgentSummary: r.user_agent_summary || undefined,
+    userId: r.user_id || undefined,
+    details: r.details,
+    createdAt: r.created_at || r.timestamp,
+  }));
+
+  const payloadStr = JSON.stringify(logs);
+  const checksum = crypto.createHash('sha256').update(payloadStr).digest('hex');
+
+  return {
+    exportedAt: new Date().toISOString(),
+    sha256Checksum: checksum,
+    count: logs.length,
+    logs,
+  };
 }
 
 export function createUser(userData: {

@@ -3,6 +3,7 @@ import { requireAdmin } from '@/lib/auth/session';
 import { extractTextFromPdfBuffer } from '@/lib/pdf/extractor';
 import { executeThreeTierGeneration } from '@/lib/ai/three-tier-engine';
 import { getDb } from '@/lib/db';
+import { logSecurityEvent } from '@/lib/db/queries';
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,10 +21,24 @@ export async function POST(req: NextRequest) {
 
     // Strict MIME & Size validation
     if (file.size > 25 * 1024 * 1024) {
+      logSecurityEvent({
+        eventType: 'INVALID_PDF_UPLOAD',
+        severity: 'WARN',
+        userId: session.id,
+        route: '/api/admin/topics/import-pdf',
+        details: `Subida de PDF bloqueada: tamaño ${file.size} bytes excede el límite máximo de 25 MB.`,
+      });
       return NextResponse.json({ error: 'El archivo excede el límite máximo permitido (25 MB).' }, { status: 413 });
     }
 
     if (file.type && file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+      logSecurityEvent({
+        eventType: 'INVALID_PDF_UPLOAD',
+        severity: 'WARN',
+        userId: session.id,
+        route: '/api/admin/topics/import-pdf',
+        details: `Subida de archivo no permitido como PDF: type=${file.type}, filename=${file.name}.`,
+      });
       return NextResponse.json({ error: 'Tipo de archivo no permitido. Debe ser un documento PDF oficial.' }, { status: 415 });
     }
 
@@ -32,6 +47,13 @@ export async function POST(req: NextRequest) {
 
     // Verify %PDF- magic bytes header
     if (!buffer.subarray(0, 5).toString('latin1').startsWith('%PDF-')) {
+      logSecurityEvent({
+        eventType: 'INVALID_PDF_UPLOAD',
+        severity: 'WARN',
+        userId: session.id,
+        route: '/api/admin/topics/import-pdf',
+        details: 'Fallo de integridad binaria: el archivo subido carece de cabecera mágica %PDF-.',
+      });
       return NextResponse.json({ error: 'Cabecera no válida: el archivo no contiene la firma binaria %PDF-.' }, { status: 422 });
     }
 

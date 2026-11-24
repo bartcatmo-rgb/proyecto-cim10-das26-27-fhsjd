@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import { User } from '@/types';
 import { signSessionToken, verifySessionToken } from './crypto';
-import { getUserById, logSecurityEvent } from '../db/queries';
+import { getUserById, logSecurityEvent, getGlobalSessionVersion } from '../db/queries';
 
 export const SESSION_COOKIE_NAME = 'aulacim10_session';
 
@@ -10,6 +10,7 @@ export interface SessionPayload {
   role: 'student' | 'admin';
   activeRole: 'student' | 'admin';
   canSwitchRole?: boolean;
+  sessionVersion?: number;
   exp: number; // Unix timestamp
 }
 
@@ -26,11 +27,14 @@ export async function setSessionCookie(
       ? preferredActiveRole
       : user.activeRole || user.role;
 
+  const currentVersion = getGlobalSessionVersion();
+
   const token = signSessionToken({
     userId: user.id,
     role: user.role,
     activeRole,
     canSwitchRole: Boolean(user.canSwitchRole),
+    sessionVersion: currentVersion,
     exp,
   });
 
@@ -68,6 +72,13 @@ export async function getCurrentUser(): Promise<User | null> {
       return null;
     }
 
+    // Check revocation against global session version
+    const currentGlobalVersion = getGlobalSessionVersion();
+    const tokenVersion = typeof payload.sessionVersion === 'number' ? payload.sessionVersion : 1;
+    if (tokenVersion < currentGlobalVersion) {
+      return null;
+    }
+
     const user = getUserById(payload.userId);
     if (!user) return null;
 
@@ -94,9 +105,9 @@ export async function requireAdmin(): Promise<User> {
   // Role isolation: activeRole MUST be 'admin'
   if (user.activeRole !== 'admin') {
     logSecurityEvent({
-      eventType: 'FORBIDDEN_ADMIN_API_ACCESS',
+      eventType: 'PRIVILEGE_ESCALATION_ATTEMPT',
       userId: user.id,
-      severity: 'WARNING',
+      severity: 'CRITICAL',
       details: `Usuario ${user.username} (rol activo: ${user.activeRole}) intentó acceder a un endpoint de administración.`,
     });
     throw new Error('FORBIDDEN');

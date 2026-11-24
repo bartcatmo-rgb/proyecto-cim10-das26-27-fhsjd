@@ -36,6 +36,7 @@ import HistoricalAuditViewer from './admin/HistoricalAuditViewer';
 import TestManagerPanel from './admin/TestManagerPanel';
 import VoiceTestCreator from './admin/VoiceTestCreator';
 import SecurityAuditViewer from './admin/SecurityAuditViewer';
+import SecurityEnvironmentPanel from './admin/SecurityEnvironmentPanel';
 import TopicManagerPanel from './admin/TopicManagerPanel';
 
 interface Props {
@@ -48,7 +49,7 @@ interface Props {
 
 export default function AdminPanel({ adminUser, analytics, students, initialCourses, initialCourseId }: Props) {
   const [activeTab, setActiveTab] = useState<
-    'group' | 'course_students' | 'history_audit' | 'test_manager' | 'topic_manager' | 'voice_ai' | 'students' | 'report_gen' | 'notices' | 'backup' | 'security_logs'
+    'group' | 'course_students' | 'history_audit' | 'test_manager' | 'topic_manager' | 'voice_ai' | 'students' | 'report_gen' | 'notices' | 'backup' | 'security_logs' | 'security_soc'
   >('group');
 
   // Academic year / course selection state
@@ -428,7 +429,7 @@ export default function AdminPanel({ adminUser, analytics, students, initialCour
           { id: 'report_gen', label: 'Generador de Reportes', icon: FileText },
           { id: 'notices', label: 'Tablón de Avisos', icon: Pin },
           { id: 'backup', label: 'Copias de Seguridad', icon: HardDrive },
-          { id: 'security_logs', label: 'Auditoría CISO / Logs', icon: Shield },
+          ...(adminUser.activeRole === 'admin' ? [{ id: 'security_soc', label: 'Seguridad y Amenazas', icon: Shield }] : []),
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -903,9 +904,9 @@ export default function AdminPanel({ adminUser, analytics, students, initialCour
         </div>
       )}
 
-      {/* TAB 10: SECURITY AUDIT & CISO LOGS */}
-      {activeTab === 'security_logs' && (
-        <SecurityAuditViewer />
+      {/* TAB 10: SEGURIDAD Y AMENAZAS (SOC & CISO) */}
+      {(activeTab === 'security_soc' || activeTab === 'security_logs') && adminUser.activeRole === 'admin' && (
+        <SecurityEnvironmentPanel adminUser={adminUser} />
       )}
 
       {/* Modal: Registrar Nuevo Año Académico */}

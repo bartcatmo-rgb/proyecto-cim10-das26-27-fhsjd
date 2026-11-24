@@ -22,9 +22,10 @@ export async function GET(
     // Strict IDOR Protection: Only admin active role or the student who performed the attempt can see it
     if (user.activeRole !== 'admin' && attemptData.attempt.userId !== user.id) {
       logSecurityEvent({
-        eventType: 'IDOR_VIOLATION_ATTEMPT',
+        eventType: 'IDOR_BLOCKED',
+        route: `/api/attempts/${id}`,
         userId: user.id,
-        severity: 'WARNING',
+        severity: 'CRITICAL',
         details: `Usuario ${user.username} intentó acceder indebidamente al intento ${id} perteneciente a otro usuario.`,
       });
       return NextResponse.json({ error: 'Acceso no autorizado a este intento.' }, { status: 403 });

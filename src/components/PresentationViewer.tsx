@@ -16,26 +16,21 @@ import {
   Minimize2,
   RotateCcw,
   Gauge,
-  Layers,
   Award,
   BookOpen,
   Lock,
-  Server,
   HeartHandshake,
   Download,
-  Users,
-  User,
   School,
   FileText,
   MessageSquare,
   ShieldAlert,
-  Sliders,
   Check,
-  ChevronRight,
   TrendingUp,
   Cpu,
-  Eye,
-  Key,
+  ZoomIn,
+  ZoomOut,
+  Laptop,
 } from 'lucide-react';
 
 export interface FeatureExplanation {
@@ -57,7 +52,6 @@ export interface Scene {
   featureExplanation?: FeatureExplanation;
 }
 
-// 8 Funcionalidades Clave Estructuradas del Sistema
 export interface SystemFeatureItem extends FeatureExplanation {
   key: string;
   sceneId: number;
@@ -333,123 +327,405 @@ const DEFAULT_SCENES: Scene[] = [
   },
 ];
 
-interface CinematicProps {
+interface RealisticClassroomProps {
   cameraMode: 'classroom' | 'zooming' | 'board';
   children: React.ReactNode;
   activeFeature: SystemFeatureItem;
-  onZoomClick: () => void;
+  onToggleZoom: () => void;
+  isPlaying: boolean;
 }
 
-function ClassroomCinematicWrapper({
+function RealisticClassroomStage({
   cameraMode,
   children,
   activeFeature,
-  onZoomClick,
-}: CinematicProps) {
-  if (cameraMode === 'board') {
-    return (
-      <div className="relative rounded-2xl border-4 border-slate-700 bg-slate-950 p-3 sm:p-4 shadow-2xl transition-all duration-500">
-        {/* Pizarra Digital Bezel & Smart Toolbar */}
-        <div className="flex items-center justify-between pb-2 mb-3 border-b border-slate-800 text-[11px] text-slate-400">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="font-bold text-white">Pizarra Digital Interactiva FHSJD · Proyección de Aula</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 rounded bg-brand-500/20 text-brand-300 font-mono text-[10px] font-bold">
-              1080p · Táctil Activo
-            </span>
-            <div className="flex items-center gap-1 bg-slate-800 px-2 py-0.5 rounded">
-              <span className="w-2 h-2 rounded-full bg-blue-400" title="Rotulador Azul" />
-              <span className="w-2 h-2 rounded-full bg-red-400" title="Puntero Láser" />
-              <span className="w-2 h-2 rounded-full bg-amber-400" title="Marcador" />
-            </div>
-          </div>
-        </div>
-        {children}
-      </div>
-    );
-  }
+  onToggleZoom,
+  isPlaying,
+}: RealisticClassroomProps) {
+  const isZoomed = cameraMode === 'board';
+  const isTransitioning = cameraMode === 'zooming';
 
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-b from-slate-900 via-slate-800 to-slate-950 border border-slate-700 p-4 min-h-[460px] flex flex-col justify-between shadow-2xl select-none">
-      {/* Dynamic zoom container */}
+    <div className="relative w-full h-full min-h-[380px] lg:min-h-[460px] rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 flex flex-col justify-between shadow-2xl select-none">
+      {/* Dynamic Classroom Viewport */}
       <div
-        className="w-full flex-1 flex flex-col items-center justify-center transition-all duration-1000 ease-out origin-center"
+        className="relative w-full h-full flex-1 flex items-center justify-center transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] origin-[52%_38%]"
         style={{
-          transform: cameraMode === 'zooming' ? 'scale(1.7) translateY(-8%)' : 'scale(1) translateY(0)',
-          filter: cameraMode === 'zooming' ? 'contrast(1.05)' : 'none',
+          transform: isZoomed
+            ? 'scale(1.9) translateY(-2%)'
+            : isTransitioning
+            ? 'scale(1.45) translateY(-1%)'
+            : 'scale(1) translateY(0)',
         }}
       >
-        {/* Institutional Plaque on Front Wall */}
-        <div className="text-center mb-2">
-          <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[10px] font-black bg-brand-900/60 text-brand-200 border border-brand-500/30 uppercase tracking-widest shadow-inner">
-            <School className="w-3 h-3 text-brand-400" />
-            <span>Fundación Hospital San Juan de Dios · Aula Magna DAS 26/27</span>
-          </div>
-        </div>
+        {/* ESCENA ILUSTRADA EN SVG DE ALTA NITIDEZ (AULA EN PERSPECTIVA) */}
+        <svg
+          viewBox="0 0 1000 640"
+          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+          preserveAspectRatio="xMidYMid slice"
+        >
+          <defs>
+            {/* Gradientes arquitectónicos de pared y suelo */}
+            <linearGradient id="cls-wall" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#0b1329" />
+              <stop offset="60%" stopColor="#111c38" />
+              <stop offset="100%" stopColor="#182649" />
+            </linearGradient>
 
-        {/* Central Whiteboard & Professor Podium */}
-        <div className="w-full max-w-xl relative mx-auto">
-          {/* SmartBoard Frame */}
-          <div className="rounded-xl border-4 border-slate-600 bg-slate-950 p-2 shadow-2xl relative">
-            <div className="flex items-center justify-between text-[9px] text-slate-400 pb-1 border-b border-slate-800 font-mono mb-1.5">
-              <span className="flex items-center gap-1 font-bold text-slate-200">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                PIZARRA DIGITAL · PROYECCIÓN EN VIVO
+            <linearGradient id="cls-floor" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#1a1e29" />
+              <stop offset="50%" stopColor="#12161f" />
+              <stop offset="100%" stopColor="#090c12" />
+            </linearGradient>
+
+            {/* Focos cenitales sobre pizarra */}
+            <radialGradient id="spotlight" cx="50%" cy="0%" r="70%">
+              <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.22" />
+              <stop offset="70%" stopColor="#38bdf8" stopOpacity="0.04" />
+              <stop offset="100%" stopColor="#0b1329" stopOpacity="0" />
+            </radialGradient>
+
+            {/* Luz de proyector / SmartBoard */}
+            <radialGradient id="board-glow" cx="50%" cy="40%" r="60%">
+              <stop offset="0%" stopColor="#6366f1" stopOpacity="0.18" />
+              <stop offset="100%" stopColor="#000000" stopOpacity="0" />
+            </radialGradient>
+
+            {/* Traje y profesor */}
+            <linearGradient id="suit-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#312e81" />
+              <stop offset="100%" stopColor="#1e1b4b" />
+            </linearGradient>
+
+            {/* Pupitres madera moderna */}
+            <linearGradient id="desk-wood" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#334155" />
+              <stop offset="50%" stopColor="#475569" />
+              <stop offset="100%" stopColor="#1e293b" />
+            </linearGradient>
+          </defs>
+
+          {/* 1. Pared Frontal del Aula */}
+          <rect x="0" y="0" width="1000" height="420" fill="url(#cls-wall)" />
+          <rect x="0" y="0" width="1000" height="420" fill="url(#spotlight)" />
+
+          {/* Ventanal izquierdo en perspectiva */}
+          <polygon points="0,40 110,90 110,380 0,420" fill="#0f2142" opacity="0.65" />
+          <line x1="0" y1="180" x2="110" y2="200" stroke="#38bdf8" strokeWidth="2" opacity="0.35" />
+          <line x1="0" y1="280" x2="110" y2="290" stroke="#38bdf8" strokeWidth="2" opacity="0.35" />
+          <polygon points="10,60 100,105 100,360 10,395" fill="#1e3a8a" opacity="0.25" />
+
+          {/* 2. Suelo del Aula en Perspectiva */}
+          <polygon points="0,420 1000,420 1000,640 0,640" fill="url(#cls-floor)" />
+          {/* Líneas de fuga del suelo */}
+          <line x1="500" y1="420" x2="100" y2="640" stroke="#334155" strokeWidth="1" opacity="0.3" />
+          <line x1="500" y1="420" x2="350" y2="640" stroke="#334155" strokeWidth="1" opacity="0.25" />
+          <line x1="500" y1="420" x2="650" y2="640" stroke="#334155" strokeWidth="1" opacity="0.25" />
+          <line x1="500" y1="420" x2="900" y2="640" stroke="#334155" strokeWidth="1" opacity="0.3" />
+
+          {/* Zócalo y friso decorativo frontal */}
+          <line x1="0" y1="420" x2="1000" y2="420" stroke="#475569" strokeWidth="3" opacity="0.5" />
+
+          {/* 3. Cartel Institucional FHSJD sobre la Pizarra */}
+          <g transform="translate(320, 20)">
+            <rect
+              x="0"
+              y="0"
+              width="360"
+              height="28"
+              rx="14"
+              fill="#0f172a"
+              stroke="#0284c7"
+              strokeWidth="1.5"
+              opacity="0.95"
+            />
+            <circle cx="18" cy="14" r="5" fill="#38bdf8" />
+            <text
+              x="180"
+              y="18"
+              fill="#e0f2fe"
+              fontSize="10"
+              fontWeight="bold"
+              letterSpacing="1.2"
+              textAnchor="middle"
+              fontFamily="sans-serif"
+            >
+              FUNDACIÓN HOSPITAL SAN JUAN DE DIOS · DAS 26/27
+            </text>
+          </g>
+
+          {/* Reloj de pared del aula (arriba a la derecha) */}
+          <g transform="translate(860, 45)">
+            <circle cx="0" cy="0" r="16" fill="#1e293b" stroke="#94a3b8" strokeWidth="2" />
+            <circle cx="0" cy="0" r="2" fill="#38bdf8" />
+            <line x1="0" y1="0" x2="0" y2="-9" stroke="#f1f5f9" strokeWidth="1.5" strokeLinecap="round" />
+            <line x1="0" y1="0" x2="6" y2="2" stroke="#38bdf8" strokeWidth="1.5" strokeLinecap="round" />
+          </g>
+
+          {/* 4. Marco Exterior Físico de la Pizarra Digital SmartBoard */}
+          <g transform="translate(200, 60)">
+            {/* Resplandor ambiental de proyección */}
+            <rect x="-15" y="-15" width="590" height="350" rx="20" fill="url(#board-glow)" />
+
+            {/* Marco de titanio y aluminio */}
+            <rect
+              x="0"
+              y="0"
+              width="560"
+              height="320"
+              rx="14"
+              fill="#090d16"
+              stroke="#475569"
+              strokeWidth="5"
+            />
+
+            {/* Altavoz integrado superior y barra táctil */}
+            <rect x="230" y="6" width="100" height="4" rx="2" fill="#334155" />
+            <circle cx="280" cy="8" r="1.5" fill="#10b981" />
+
+            {/* Bandeja para lápices ópticos magnéticos en la base */}
+            <rect x="180" y="315" width="200" height="5" rx="2" fill="#64748b" />
+            <rect x="210" y="316" width="35" height="3" rx="1.5" fill="#38bdf8" />
+            <rect x="255" y="316" width="35" height="3" rx="1.5" fill="#f43f5e" />
+          </g>
+
+          {/* 5. EL PROFESOR EXPLICANDO JUNTO A LA PIZARRA (De pie, señalando activamente) */}
+          <g transform="translate(130, 160)">
+            {/* Sombra en el suelo */}
+            <ellipse cx="25" cy="255" rx="32" ry="10" fill="#000000" opacity="0.45" />
+
+            {/* Piernas y pantalones formales */}
+            <path d="M12,180 L8,250 L20,250 L22,180 Z" fill="#1e293b" />
+            <path d="M26,180 L28,250 L40,250 L34,180 Z" fill="#0f172a" />
+            {/* Zapatos */}
+            <ellipse cx="14" cy="252" rx="10" ry="4" fill="#020617" />
+            <ellipse cx="34" cy="252" rx="10" ry="4" fill="#020617" />
+
+            {/* Torso con americana / chaqueta formal */}
+            <path d="M4,75 Q24,68 44,75 L42,180 Q24,185 6,180 Z" fill="url(#suit-grad)" />
+            {/* Camisa y corbata / lanyard institucional */}
+            <polygon points="20,72 28,72 26,120 22,120" fill="#f8fafc" />
+            <line x1="24" y1="72" x2="24" y2="135" stroke="#0284c7" strokeWidth="2.5" />
+            {/* Acreditación docente FHSJD */}
+            <rect x="20" y="130" width="9" height="13" rx="1.5" fill="#ffffff" stroke="#0284c7" strokeWidth="1" />
+
+            {/* Brazo izquierdo sosteniendo tablet docente */}
+            <path d="M6,80 Q-10,115 2,135" stroke="#312e81" strokeWidth="12" strokeLinecap="round" fill="none" />
+            {/* Tablet docente con pantalla azul encendida */}
+            <rect x="-14" y="125" width="22" height="15" rx="2" fill="#0f172a" stroke="#38bdf8" strokeWidth="1.5" />
+            <rect x="-11" y="127" width="16" height="11" fill="#0284c7" opacity="0.8" />
+
+            {/* Brazo derecho extendido SEÑALANDO LA PIZARRA CON GESTO ACTIVO */}
+            <path
+              d="M42,85 Q65,80 88,68"
+              stroke="#312e81"
+              strokeWidth="11"
+              strokeLinecap="round"
+              fill="none"
+            />
+            {/* Mano extendida y puntero digital hacia la pizarra */}
+            <circle cx="92" cy="66" r="4.5" fill="#fbcfe8" />
+            <line x1="94" y1="64" x2="115" y2="52" stroke="#38bdf8" strokeWidth="2" strokeDasharray="2 2" />
+            <circle cx="118" cy="50" r="3" fill="#38bdf8" opacity="0.9" className="animate-ping" />
+
+            {/* Cuello y cabeza del profesor */}
+            <rect x="18" y="55" width="12" height="16" fill="#fbcfe8" />
+            <ellipse cx="24" cy="42" rx="14" ry="17" fill="#fbcfe8" />
+            {/* Pelo cuidado */}
+            <path d="M10,40 Q24,18 38,36 Q34,22 18,22 Q10,28 10,40 Z" fill="#334155" />
+            {/* Gafas profesionales */}
+            <rect x="17" y="38" width="7" height="5" rx="1" fill="none" stroke="#0284c7" strokeWidth="1.2" />
+            <rect x="26" y="38" width="7" height="5" rx="1" fill="none" stroke="#0284c7" strokeWidth="1.2" />
+            <line x1="24" y1="40" x2="26" y2="40" stroke="#0284c7" strokeWidth="1" />
+
+            {/* Bocadillo / Indicador de voz activa */}
+            <g transform="translate(-10, -5)">
+              <rect x="0" y="0" width="78" height="20" rx="10" fill="#1e1b4b" stroke="#818cf8" strokeWidth="1.5" />
+              <text x="39" y="13" fill="#e0e7ff" fontSize="9" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">
+                Profesor FHSJD
+              </text>
+              {/* Onda sonora animada si está sonando */}
+              {isPlaying && (
+                <circle cx="70" cy="10" r="3" fill="#34d399" className="animate-pulse" />
+              )}
+            </g>
+          </g>
+
+          {/* 6. FILA DE ALUMNOS SENTADOS EN PUPITRES MIRANDO HACIA LA PIZARRA (Plano Medio) */}
+          {/* Pupitre Central Izquierdo: Alumna Laia Cachinero Baranda */}
+          <g transform="translate(240, 395)">
+            {/* Sombra del pupitre */}
+            <ellipse cx="90" cy="110" rx="95" ry="14" fill="#000000" opacity="0.4" />
+
+            {/* Silla ergonómica de aula */}
+            <path d="M60,65 Q85,55 110,65 L105,100 L65,100 Z" fill="#1e293b" stroke="#334155" strokeWidth="2" />
+            <line x1="85" y1="100" x2="85" y2="120" stroke="#475569" strokeWidth="4" />
+            <line x1="65" y1="120" x2="105" y2="120" stroke="#475569" strokeWidth="3" />
+
+            {/* Alumna sentada de espaldas / 3/4 mirando hacia la pizarra */}
+            <ellipse cx="85" cy="50" rx="22" ry="25" fill="#065f46" /> {/* Chaqueta verde esmeralda */}
+            {/* Cabeza con coleta alta */}
+            <circle cx="85" cy="22" r="14" fill="#fed7aa" />
+            <path d="M72,20 Q85,6 98,20 Q92,10 78,10 Z" fill="#78350f" />
+            <path d="M96,20 Q108,24 104,36 Q98,34 94,22 Z" fill="#78350f" /> {/* Coleta */}
+
+            {/* Pupitre de madera */}
+            <polygon points="10,65 160,65 175,85 -5,85" fill="url(#desk-wood)" stroke="#64748b" strokeWidth="1" />
+            {/* Patas metálicas */}
+            <line x1="5" y1="85" x2="5" y2="140" stroke="#475569" strokeWidth="3" />
+            <line x1="165" y1="85" x2="165" y2="140" stroke="#475569" strokeWidth="3" />
+
+            {/* Portátil abierto sobre el pupitre */}
+            <g transform="translate(62, 50)">
+              {/* Teclado */}
+              <polygon points="5,22 45,22 50,30 0,30" fill="#0f172a" stroke="#94a3b8" strokeWidth="1" />
+              {/* Pantalla orientada hacia adelante con resplandor */}
+              <polygon points="5,22 45,22 43,0 7,0" fill="#0284c7" stroke="#38bdf8" strokeWidth="1.5" />
+              <rect x="10" y="3" width="30" height="15" fill="#38bdf8" opacity="0.3" />
+              {/* Logo sutil en la tapa posterior */}
+              <circle cx="25" cy="11" r="2.5" fill="#e0f2fe" opacity="0.9" />
+            </g>
+
+            {/* Rótulo de la alumna */}
+            <g transform="translate(30, -5)">
+              <rect x="0" y="0" width="115" height="18" rx="9" fill="#064e3b" stroke="#34d399" strokeWidth="1" opacity="0.95" />
+              <text x="57" y="12" fill="#d1fae5" fontSize="8.5" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">
+                Laia (48069899Z) · Alumna
+              </text>
+            </g>
+          </g>
+
+          {/* Pupitre Central Derecho: Alumno atendiendo y codificando */}
+          <g transform="translate(560, 395)">
+            {/* Sombra */}
+            <ellipse cx="90" cy="110" rx="95" ry="14" fill="#000000" opacity="0.4" />
+
+            {/* Silla */}
+            <path d="M60,65 Q85,55 110,65 L105,100 L65,100 Z" fill="#1e293b" stroke="#334155" strokeWidth="2" />
+            <line x1="85" y1="100" x2="85" y2="120" stroke="#475569" strokeWidth="4" />
+            <line x1="65" y1="120" x2="105" y2="120" stroke="#475569" strokeWidth="3" />
+
+            {/* Alumno de espaldas atento a la explicación */}
+            <ellipse cx="85" cy="50" rx="24" ry="26" fill="#1e3a8a" /> {/* Sudadera azul */}
+            {/* Cabeza */}
+            <circle cx="85" cy="22" r="14" fill="#fcd34d" />
+            <path d="M72,22 Q85,8 98,22 Q94,10 76,12 Z" fill="#18181b" />
+
+            {/* Pupitre */}
+            <polygon points="10,65 160,65 175,85 -5,85" fill="url(#desk-wood)" stroke="#64748b" strokeWidth="1" />
+            <line x1="5" y1="85" x2="5" y2="140" stroke="#475569" strokeWidth="3" />
+            <line x1="165" y1="85" x2="165" y2="140" stroke="#475569" strokeWidth="3" />
+
+            {/* Portátil del alumno */}
+            <g transform="translate(62, 50)">
+              <polygon points="5,22 45,22 50,30 0,30" fill="#0f172a" stroke="#94a3b8" strokeWidth="1" />
+              <polygon points="5,22 45,22 43,0 7,0" fill="#6366f1" stroke="#818cf8" strokeWidth="1.5" />
+              <rect x="10" y="3" width="30" height="15" fill="#a5b4fc" opacity="0.3" />
+              <circle cx="25" cy="11" r="2.5" fill="#ffffff" opacity="0.9" />
+            </g>
+
+            {/* Rótulo Alumno B */}
+            <g transform="translate(38, -5)">
+              <rect x="0" y="0" width="100" height="18" rx="9" fill="#1e1b4b" stroke="#818cf8" strokeWidth="1" opacity="0.95" />
+              <text x="50" y="12" fill="#e0e7ff" fontSize="8.5" fontWeight="bold" textAnchor="middle" fontFamily="sans-serif">
+                Alumno DAS · En Directo
+              </text>
+            </g>
+          </g>
+
+          {/* 7. PRIMER PLANO (Foreground): HOMBROS Y PORTÁTILES EN LA PARTE INFERIOR DEL AULA */}
+          {/* Silueta Alumno Foreground Izquierda */}
+          <g transform="translate(20, 510)" opacity="0.85">
+            <ellipse cx="60" cy="100" rx="45" ry="50" fill="#090d16" />
+            <circle cx="60" cy="45" r="26" fill="#0f172a" />
+            {/* Portátil en mesa inferior */}
+            <polygon points="100,50 180,50 190,75 90,75" fill="#1e293b" stroke="#334155" strokeWidth="1" />
+            <polygon points="100,50 180,50 178,20 102,20" fill="#0284c7" opacity="0.4" stroke="#38bdf8" strokeWidth="1" />
+          </g>
+
+          {/* Silueta Alumno Foreground Derecha */}
+          <g transform="translate(820, 510)" opacity="0.85">
+            <ellipse cx="60" cy="100" rx="45" ry="50" fill="#090d16" />
+            <circle cx="60" cy="45" r="26" fill="#0f172a" />
+            <polygon points="-40,50 40,50 50,75 -50,75" fill="#1e293b" stroke="#334155" strokeWidth="1" />
+            <polygon points="-40,50 40,50 38,20 -38,20" fill="#10b981" opacity="0.4" stroke="#34d399" strokeWidth="1" />
+          </g>
+        </svg>
+
+        {/* CONTENEDOR DE LA PANTALLA PROYECTADA DENTRO DE LA PIZARRA DIGITAL */}
+        {/* Posicionado exactamente en las coordenadas relativas del marco de la SmartBoard (20% a 76% ancho, 9% a 59% alto) */}
+        <div
+          className={`absolute transition-all duration-700 ease-out z-10 flex flex-col ${
+            isZoomed
+              ? 'inset-2 sm:inset-3 rounded-xl border-2 border-brand-500/70 bg-slate-950 p-2 sm:p-3 shadow-2xl overflow-y-auto'
+              : 'left-[21.5%] top-[11.2%] w-[53%] h-[45%] rounded-lg border border-slate-700 bg-slate-950 p-1.5 sm:p-2 shadow-2xl overflow-hidden pointer-events-auto'
+          }`}
+        >
+          {/* Barra de cabecera de la pizarra táctil */}
+          <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-slate-800 text-[10px] text-slate-300">
+            <div className="flex items-center gap-1.5 font-bold">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-white text-[11px] truncate">
+                {isZoomed ? 'PIZARRA DIGITAL · ENFOQUE TÁCTIL ACTIVO' : 'PROYECCIÓN EN PIZARRA'}
               </span>
-              <span className="text-brand-400 font-semibold">{activeFeature.badge}</span>
             </div>
 
-            {/* Embedded simulation screen inside the board */}
-            <div className="rounded overflow-hidden max-h-[300px] overflow-y-auto">
-              {children}
+            <div className="flex items-center gap-1.5 font-mono text-[9px]">
+              <span className="hidden sm:inline px-1.5 py-0.5 rounded bg-brand-500/20 text-brand-300 font-bold">
+                {activeFeature.badge}
+              </span>
+              <button
+                type="button"
+                onClick={onToggleZoom}
+                className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 transition font-sans font-bold flex items-center gap-1 border border-slate-700"
+                title={isZoomed ? 'Alejar a Vista de Aula' : 'Acercar Pizarra'}
+              >
+                {isZoomed ? <ZoomOut className="w-3 h-3 text-brand-400" /> : <ZoomIn className="w-3 h-3 text-brand-400" />}
+                <span className="hidden xs:inline">{isZoomed ? 'Alejar' : 'Zoom'}</span>
+              </button>
             </div>
           </div>
 
-          {/* Teacher avatar standing next to whiteboard */}
-          <div className="absolute -left-6 bottom-0 hidden sm:flex flex-col items-center pointer-events-none">
-            <div className="bg-purple-950/90 text-purple-200 border border-purple-500/40 text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-md mb-1 animate-bounce">
-              Profesor
-            </div>
-            <div className="w-8 h-16 bg-gradient-to-b from-purple-600 to-indigo-800 rounded-t-full border border-purple-400/40 shadow-lg flex items-center justify-center">
-              <User className="w-5 h-5 text-white" />
-            </div>
+          {/* Contenido interactivo dinámico de la aplicación */}
+          <div className="flex-1 min-h-0 overflow-y-auto rounded bg-slate-950/90 text-white">
+            {children}
           </div>
-        </div>
-
-        {/* Classroom Rows with Students at Desks */}
-        <div className="w-full mt-4 pt-3 border-t border-slate-700/50 flex items-center justify-around text-slate-400">
-          {[
-            { id: 1, name: 'Laia (48069899Z)', status: 'Codificando MEAP' },
-            { id: 2, name: 'Alumno DAS A', status: 'Verificando Diagnóstico' },
-            { id: 3, name: 'Alumno DAS B', status: 'Atendiendo Explicación' },
-          ].map((student) => (
-            <div key={student.id} className="flex flex-col items-center">
-              <div className="text-[9px] font-bold text-slate-300 bg-slate-800/90 px-2 py-0.5 rounded-full border border-slate-600 mb-1">
-                {student.name}
-              </div>
-              <div className="w-16 h-7 bg-slate-800 border border-slate-600 rounded-t-lg flex items-center justify-center text-[8px] text-teal-300 font-mono shadow-md">
-                💻 AulaCIM
-              </div>
-            </div>
-          ))}
         </div>
       </div>
 
-      {/* Floating Action to Trigger Zoom */}
-      {cameraMode === 'classroom' && (
-        <div className="absolute bottom-3 right-3 z-10">
+      {/* Barra de herramientas inferior del escenario de clase */}
+      <div className="relative z-20 bg-slate-900/95 border-t border-slate-800 px-3 py-1.5 flex items-center justify-between text-xs text-slate-300">
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-300">
+            <School className="w-3.5 h-3.5 text-brand-400" />
+            <span className="hidden sm:inline">Aula Magna FHSJD ·</span> Alumnos Presenciales & Pizarra Digital
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={onZoomClick}
-            className="px-3 py-1.5 bg-brand-500 hover:bg-brand-400 text-slate-950 font-black text-xs rounded-xl shadow-lg transition flex items-center gap-1.5 animate-pulse"
+            onClick={onToggleZoom}
+            className={`px-3 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-xs ${
+              isZoomed
+                ? 'bg-brand-500 text-slate-950 hover:bg-brand-400'
+                : 'bg-indigo-600 hover:bg-indigo-500 text-white animate-pulse'
+            }`}
           >
-            <Maximize2 className="w-3.5 h-3.5" />
-            <span>Hacer Zoom a la Pizarra</span>
+            {isZoomed ? (
+              <>
+                <ZoomOut className="w-3.5 h-3.5" />
+                <span>Vista Aula General</span>
+              </>
+            ) : (
+              <>
+                <ZoomIn className="w-3.5 h-3.5" />
+                <span>Enfocar Pizarra Digital</span>
+              </>
+            )}
           </button>
         </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -461,17 +737,17 @@ export default function PresentationViewer() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [hasAudioFile, setHasAudioFile] = useState(true);
-  const [playbackSpeed, setPlaybackSpeed] = useState<1 | 1.5 | 2>(1.5); // Ritmo ágil por defecto
+  const [playbackSpeed, setPlaybackSpeed] = useState<1 | 1.5 | 2>(1.5);
   const [autoAdvance, setAutoAdvance] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(260); // Duración total estimada ~4m20s
+  const [duration, setDuration] = useState(260);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Estados de Cinemática de Dinámica de Clase y Zoom a Pizarra
+  // Cámara cinemática: arranca en aula completa y hace zoom suave a la pizarra
   const [cameraMode, setCameraMode] = useState<'classroom' | 'zooming' | 'board'>('classroom');
   const [autoCinematic, setAutoCinematic] = useState(true);
 
-  // Estados interactivos para el simulador de UI
+  // Estados interactivos para las pantallas simuladas
   const [simSelectedOption, setSimSelectedOption] = useState<'A' | 'B' | 'C' | 'D' | null>('B');
   const [simShowReasoned, setSimShowReasoned] = useState(true);
   const [simSubjectFilter, setSimSubjectFilter] = useState<'all' | 'cim10' | 'docsan'>('all');
@@ -482,7 +758,6 @@ export default function PresentationViewer() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    // Cargar escenas si hay endpoint dinámico
     fetch('/api/media/presentation-scenes')
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
@@ -492,7 +767,6 @@ export default function PresentationViewer() {
       })
       .catch(() => {});
 
-    // Escuchar cambios de fullscreen del navegador
     const handleFsChange = () => {
       setIsFullscreen(Boolean(document.fullscreenElement));
     };
@@ -504,7 +778,6 @@ export default function PresentationViewer() {
 
   const currentScene = scenes[currentSceneIdx] || scenes[0];
 
-  // Sincronizar feature activa cuando cambia la escena
   useEffect(() => {
     if (currentScene.featureExplanation) {
       const match = SYSTEM_FEATURES.find((f) => f.sceneId === currentScene.id);
@@ -514,39 +787,35 @@ export default function PresentationViewer() {
     }
   }, [currentSceneIdx, currentScene]);
 
-  // Aplicar velocidad de reproducción al audio
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.playbackRate = playbackSpeed;
     }
   }, [playbackSpeed]);
 
-  // Cinemática de dinámica de clase: arranca en fondo del aula y hace zoom progresivo a la pizarra
+  // Transición suave: aula general -> zoom suave hacia la pizarra proyectada
   useEffect(() => {
     if (!autoCinematic || !isPlaying) return;
 
-    // 1. Mostrar visión general del fondo del aula
     setCameraMode('classroom');
 
-    // 2. Transición de zoom progresivo hacia la pizarra digital
     const zoomTimer = setTimeout(() => {
       setCameraMode('zooming');
-      // 3. Foco completo en la pizarra digital
       const boardTimer = setTimeout(() => {
         setCameraMode('board');
-      }, 1300);
+      }, 1000);
       return () => clearTimeout(boardTimer);
-    }, Math.round(2800 / playbackSpeed));
+    }, Math.round(2600 / playbackSpeed));
 
     return () => clearTimeout(zoomTimer);
   }, [currentSceneIdx, isPlaying, autoCinematic, playbackSpeed]);
 
-  const handleCameraChange = (mode: 'classroom' | 'zooming' | 'board') => {
-    if (mode === 'zooming') {
-      setCameraMode('zooming');
-      setTimeout(() => setCameraMode('board'), 1100);
+  const handleToggleZoom = () => {
+    if (cameraMode === 'board') {
+      setCameraMode('classroom');
     } else {
-      setCameraMode(mode);
+      setCameraMode('zooming');
+      setTimeout(() => setCameraMode('board'), 750);
     }
   };
 
@@ -605,22 +874,21 @@ export default function PresentationViewer() {
         await document.exitFullscreen();
       }
     } catch (err) {
-      console.warn('Error al cambiar a pantalla completa:', err);
+      console.warn('Error al alternar pantalla completa:', err);
     }
   };
 
-  // Feature activa actual
   const activeFeature =
     SYSTEM_FEATURES.find((f) => f.key === activeFeatureKey) || SYSTEM_FEATURES[0];
 
   return (
     <div
       ref={containerRef}
-      className={`space-y-3.5 transition-colors duration-300 ${
-        isFullscreen ? 'bg-slate-950 p-4 overflow-y-auto min-h-screen text-white' : ''
+      className={`w-full h-full flex flex-col justify-between overflow-hidden gap-2 ${
+        isFullscreen ? 'bg-slate-950 p-2 sm:p-3 text-white' : ''
       }`}
     >
-      {/* Elemento de audio para locución neural */}
+      {/* Audio neural Elvira */}
       <audio
         ref={audioRef}
         src="/media/aulacim10-presentacion-audio.mp3"
@@ -643,43 +911,34 @@ export default function PresentationViewer() {
         onError={() => setHasAudioFile(false)}
       />
 
-      {/* CABECERA PRINCIPAL COMPACTA CON ESTADO Y PANTALLA COMPLETA */}
-      <div className="bg-slate-900 text-white p-3.5 sm:p-4 rounded-xl border border-slate-800 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-3">
-        <div className="space-y-1">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-brand-500/20 text-brand-300 border border-brand-500/30">
-              <ShieldCheck className="w-3 h-3 text-brand-400" />
-              <span>Acceso Exclusivo: Claustro Docente y Dirección FHSJD</span>
-            </span>
-
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">
-              <Gauge className="w-3 h-3 text-purple-400" />
-              <span>Ritmo Ágil: {playbackSpeed}x</span>
-            </span>
+      {/* CABECERA COMPACTA SIN SCROLL */}
+      <div className="bg-slate-900 text-white px-3 py-1.5 rounded-xl border border-slate-800 shadow-sm flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="p-1 rounded-lg bg-brand-500/20 text-brand-400 flex-shrink-0">
+            <Tv className="w-4 h-4" />
+          </span>
+          <div className="min-w-0">
+            <h1 className="text-xs sm:text-sm font-black text-white tracking-tight truncate flex items-center gap-1.5">
+              <span>Dinámica de Aula · Pizarra Digital Proyectada</span>
+              <span className="hidden sm:inline px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                DAS 26/27
+              </span>
+            </h1>
           </div>
-
-          <h1 className="text-base sm:text-lg font-black text-white tracking-tight flex items-center gap-2">
-            <Tv className="w-5 h-5 text-brand-400 flex-shrink-0" />
-            <span>Presentación Interactiva · AulaCIM-10 (DAS 26/27)</span>
-          </h1>
-
-          <p className="text-xs text-slate-300">
-            Explicación sincronizada con cinemática animada de dinamización de clase y simulación en pizarra digital.
-          </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Selector de Velocidad */}
-          <div className="inline-flex items-center rounded-xl bg-slate-800 border border-slate-700 p-1 text-xs font-bold">
-            <span className="px-2 text-slate-400 flex items-center gap-1">
-              <Gauge className="w-3.5 h-3.5 text-brand-400" /> Velocidad:
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          {/* Velocidad de Reproducción */}
+          <div className="inline-flex items-center rounded-lg bg-slate-800 border border-slate-700 p-0.5 text-[11px] font-bold">
+            <span className="px-1.5 text-slate-400 flex items-center gap-1">
+              <Gauge className="w-3 h-3 text-brand-400" />
             </span>
             {([1, 1.5, 2] as const).map((spd) => (
               <button
                 key={spd}
                 type="button"
                 onClick={() => setPlaybackSpeed(spd)}
-                className={`px-2.5 py-1 rounded-lg transition ${
+                className={`px-1.5 py-0.5 rounded transition ${
                   playbackSpeed === spd
                     ? 'bg-brand-500 text-slate-950 font-black shadow-xs'
                     : 'text-slate-300 hover:text-white'
@@ -690,41 +949,36 @@ export default function PresentationViewer() {
             ))}
           </div>
 
-          {/* Botón de Pantalla Completa */}
+          {/* Pantalla Completa */}
           <button
             type="button"
             onClick={toggleFullscreen}
-            className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
+            className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-xs"
             title={isFullscreen ? 'Salir de Pantalla Completa (ESC)' : 'Ver en Pantalla Completa'}
           >
             {isFullscreen ? (
               <>
-                <Minimize2 className="w-4 h-4" />
-                <span>Ventana</span>
+                <Minimize2 className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Ventana</span>
               </>
             ) : (
               <>
-                <Maximize2 className="w-4 h-4" />
-                <span>Pantalla Completa</span>
+                <Maximize2 className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Pantalla Completa</span>
               </>
             )}
           </button>
         </div>
       </div>
 
-      {/* SELECTOR RÁPIDO DE FUNCIONALIDADES (8 PÍLDORAS CLAVE) */}
-      <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200 shadow-sm space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-brand-600" />
-            Funcionalidades del Sistema Explicadas en Directo (Clic para inspeccionar):
-          </span>
-          <span className="text-[11px] text-slate-400 font-semibold hidden sm:inline">
-            Sincronizado con Escena {currentScene.id}/7
-          </span>
-        </div>
+      {/* SELECTOR RÁPIDO DE FUNCIONALIDADES (PÍLDORAS SIN SCROLL) */}
+      <div className="bg-white px-2.5 py-1 rounded-xl border border-slate-200 shadow-2xs flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1 flex-shrink-0 pl-1">
+          <Sparkles className="w-3 h-3 text-brand-600" />
+          <span className="hidden md:inline">Funcionalidades:</span>
+        </span>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-1.5 flex-1 min-w-0 overflow-x-auto scrollbar-none py-0.5">
           {SYSTEM_FEATURES.map((feat) => {
             const isSelected = activeFeatureKey === feat.key;
             const Icon = feat.icon;
@@ -733,13 +987,13 @@ export default function PresentationViewer() {
                 key={feat.key}
                 type="button"
                 onClick={() => handleSelectFeature(feat)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-2xs ${
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold transition whitespace-nowrap shadow-2xs flex-shrink-0 ${
                   isSelected
-                    ? 'bg-brand-700 text-white shadow-sm ring-2 ring-brand-400'
+                    ? 'bg-brand-700 text-white shadow-xs ring-1 ring-brand-400'
                     : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
                 }`}
               >
-                <Icon className="w-3.5 h-3.5" />
+                <Icon className="w-3 h-3" />
                 <span>{feat.shortName}</span>
                 {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />}
               </button>
@@ -748,327 +1002,220 @@ export default function PresentationViewer() {
         </div>
       </div>
 
-      {/* PANEL PRINCIPAL: DOS COLUMNAS (EXPLICACIÓN ESTRUCTURADA + SIMULADOR VISUAL REAL) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* COLUMNA IZQUIERDA: TEXTO EXPLICATIVO SINCRONIZADO CON LA FUNCIÓN (5 columnas) */}
-        <div className="lg:col-span-5 space-y-4">
-          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4 relative overflow-hidden">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <span className="p-2 rounded-xl bg-brand-50 text-brand-700 font-bold">
-                  {React.createElement(activeFeature.icon, { className: 'w-5 h-5' })}
+      {/* PANEL PRINCIPAL: DOS COLUMNAS EN UNA SOLA PANTALLA (EXPLICACIÓN + ESCENARIO DE CLASE) */}
+      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-2.5 items-stretch overflow-hidden">
+        {/* COLUMNA IZQUIERDA: EXPLICACIÓN COMPACTA Y SINCRONIZADA (5 COLS) */}
+        <div className="lg:col-span-5 h-full flex flex-col justify-between bg-white rounded-xl p-3 border border-slate-200 shadow-xs overflow-y-auto">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
+              <div className="flex items-center gap-1.5">
+                <span className="p-1 rounded-lg bg-brand-50 text-brand-700 font-bold">
+                  {React.createElement(activeFeature.icon, { className: 'w-4 h-4' })}
                 </span>
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
-                    Explicación de la Funcionalidad
-                  </span>
-                  <div className="text-xs font-bold text-brand-700">{activeFeature.badge}</div>
+                  <div className="text-[11px] font-extrabold text-brand-700 leading-none">
+                    {activeFeature.badge}
+                  </div>
                 </div>
               </div>
 
-              <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600">
-                Escena {activeFeature.sceneId} / 7
+              <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-slate-100 text-slate-600">
+                Escena {activeFeature.sceneId}/7
               </span>
             </div>
 
-            <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 leading-snug">
+            <h2 className="text-xs sm:text-sm font-extrabold text-slate-900 leading-snug">
               {activeFeature.functionTitle || activeFeature.title}
             </h2>
 
-            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed bg-slate-50 p-3.5 rounded-xl border border-slate-100">
+            <p className="text-[11px] text-slate-600 leading-relaxed bg-slate-50 p-2 rounded-lg border border-slate-100">
               {activeFeature.summary}
             </p>
 
-            {/* Puntos Clave de la Función */}
-            <div className="space-y-2.5 pt-1">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-700 block">
-                Puntos Clave y Garantías Operativas:
-              </span>
-              {activeFeature.keyHighlights.map((hl, idx) => (
-                <div key={idx} className="flex items-start gap-2 text-xs text-slate-700 leading-normal">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+            {/* Puntos clave */}
+            <div className="space-y-1 pt-0.5">
+              {activeFeature.keyHighlights.slice(0, 3).map((hl, idx) => (
+                <div key={idx} className="flex items-start gap-1.5 text-[10.5px] text-slate-700 leading-tight">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0 mt-0.5" />
                   <span>{hl}</span>
                 </div>
               ))}
             </div>
+          </div>
 
-            {/* Locución actual transcrita */}
-            <div className="mt-4 pt-3 border-t border-slate-100 space-y-1.5">
-              <div className="flex items-center justify-between text-[11px] font-bold text-slate-500">
-                <span>Locución de la Escena Actual ({currentScene.id}):</span>
-                <span className="text-brand-600 font-semibold">Voz Elvira Neural</span>
-              </div>
-              <p className="text-xs text-slate-600 italic bg-amber-50/60 p-2.5 rounded-lg border border-amber-200/60 max-h-24 overflow-y-auto">
-                &ldquo;{currentScene.narration}&rdquo;
-              </p>
+          {/* Locución actual transcrita */}
+          <div className="pt-2 border-t border-slate-100 mt-2 space-y-1">
+            <div className="flex items-center justify-between text-[10px] font-bold text-slate-500">
+              <span>Locución de Aula (Elvira Neural):</span>
+              <span className="text-brand-600 font-semibold">{Math.floor(currentTime)}s / ~{duration}s</span>
             </div>
+            <p className="text-[10px] text-slate-600 italic bg-amber-50/70 p-2 rounded-lg border border-amber-200/60 max-h-16 overflow-y-auto leading-tight">
+              &ldquo;{currentScene.narration}&rdquo;
+            </p>
           </div>
         </div>
 
-        {/* COLUMNA DERECHA: SIMULADOR VISUAL ANIMADO DE LOS FLUJOS REALES (7 columnas) */}
-        <div className="lg:col-span-7 space-y-4">
-          <div className="bg-slate-900 text-white rounded-2xl p-4 sm:p-5 border border-slate-800 shadow-xl space-y-3.5">
-            {/* Cabecera del Simulador con Dinámica de Clase y Zoom a Pizarra */}
-            <div className="flex flex-wrap items-center justify-between border-b border-slate-800 pb-2.5 gap-2">
-              <div className="flex items-center gap-2">
-                <span className="flex space-x-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                </span>
-                <span className="text-xs text-slate-300 font-mono ml-1.5">
-                  Dinámica de Clase · Proyección Pizarra Digital
-                </span>
-              </div>
-
-              {/* Botones de Control de Cámara Cinemática */}
-              <div className="flex flex-wrap items-center gap-1 bg-slate-800/90 p-1 rounded-xl text-xs font-bold">
-                <button
-                  type="button"
-                  onClick={() => handleCameraChange('classroom')}
-                  className={`px-2 py-1 rounded-lg transition flex items-center gap-1 ${
-                    cameraMode === 'classroom'
-                      ? 'bg-brand-500 text-slate-950 font-black shadow-xs'
-                      : 'text-slate-300 hover:text-white'
-                  }`}
-                  title="Vista general desde el fondo del aula"
-                >
-                  <School className="w-3.5 h-3.5" />
-                  <span>Fondo Aula</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleCameraChange('zooming')}
-                  className={`px-2 py-1 rounded-lg transition flex items-center gap-1 ${
-                    cameraMode === 'zooming'
-                      ? 'bg-purple-500 text-white font-black shadow-xs'
-                      : 'text-slate-300 hover:text-white'
-                  }`}
-                  title="Animar zoom progresivo hacia la pizarra digital"
-                >
-                  <Maximize2 className="w-3.5 h-3.5" />
-                  <span>Zoom Pizarra</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleCameraChange('board')}
-                  className={`px-2 py-1 rounded-lg transition flex items-center gap-1 ${
-                    cameraMode === 'board'
-                      ? 'bg-indigo-600 text-white font-black shadow-xs'
-                      : 'text-slate-300 hover:text-white'
-                  }`}
-                  title="Foco directo en la pantalla de la pizarra digital"
-                >
-                  <Tv className="w-3.5 h-3.5" />
-                  <span>Foco Pizarra</span>
-                </button>
-
-                <label className="flex items-center gap-1 ml-1 pl-2 border-l border-slate-700 text-[10px] text-slate-300 font-medium cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={autoCinematic}
-                    onChange={(e) => setAutoCinematic(e.target.checked)}
-                    className="rounded border-slate-600 text-brand-500 w-3 h-3"
-                  />
-                  <span>Auto-zoom</span>
-                </label>
-              </div>
-            </div>
-
-            <ClassroomCinematicWrapper
-              cameraMode={cameraMode}
-              activeFeature={activeFeature}
-              onZoomClick={() => handleCameraChange('zooming')}
-            >
-              {/* PANTALLA SIMULADA SEGÚN LA FUNCIÓN ACTIVA */}
-              <div className="bg-slate-950 rounded-xl p-3 sm:p-4 border border-slate-800/80 min-h-[350px] flex flex-col justify-center">
-              {/* 1. SIMULACIÓN LOGIN & ROLES */}
+        {/* COLUMNA DERECHA: ESCENARIO ILUSTRADO DE CLASE CON PIZARRA DIGITAL DINÁMICA (7 COLS) */}
+        <div className="lg:col-span-7 h-full flex flex-col justify-between overflow-hidden">
+          <RealisticClassroomStage
+            cameraMode={cameraMode}
+            activeFeature={activeFeature}
+            onToggleZoom={handleToggleZoom}
+            isPlaying={isPlaying}
+          >
+            {/* PANTALLAS SIMULADAS DE AULACIM-10 DENTRO DE LA PIZARRA DIGITAL */}
+            <div className="p-2 sm:p-2.5 space-y-2 text-xs">
+              {/* 1. LOGIN Y CONTROL DE ACCESO */}
               {activeFeature.simulation === 'login' && (
-                <div className="max-w-md mx-auto w-full bg-slate-900 p-5 rounded-2xl border border-slate-700 shadow-lg space-y-3.5">
-                  <div className="text-center space-y-1">
-                    <div className="inline-flex p-2 rounded-xl bg-brand-500/20 text-brand-300 mb-1">
-                      <Lock className="w-6 h-6" />
-                    </div>
-                    <h3 className="text-base font-bold text-white">Muro de Login Seguro · BancActiu</h3>
-                    <p className="text-xs text-slate-400">Introduce DNI o usuario para acceder al aula</p>
+                <div className="space-y-2 max-w-sm mx-auto">
+                  <div className="text-center">
+                    <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-500/40">
+                      Muro de Login Seguro · Zero-Trust
+                    </span>
+                    <h3 className="text-xs font-bold text-white mt-1">Acceso Identificado al Aula</h3>
                   </div>
 
-                  <div className="space-y-2 text-xs">
+                  <div className="space-y-1.5 text-[11px]">
                     <div>
-                      <label className="text-slate-300 font-bold block mb-1">DNI / Usuario</label>
+                      <span className="text-slate-400 block text-[10px]">DNI / Identificador:</span>
                       <input
                         type="text"
                         readOnly
                         value="48069899Z"
-                        className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-mono"
+                        className="w-full px-2 py-1 bg-slate-900 border border-slate-700 rounded text-white font-mono text-xs"
                       />
                     </div>
                     <div>
-                      <label className="text-slate-300 font-bold block mb-1">Contraseña</label>
+                      <span className="text-slate-400 block text-[10px]">Contraseña:</span>
                       <input
                         type="password"
                         readOnly
                         value="••••••••"
-                        className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-white font-mono"
+                        className="w-full px-2 py-1 bg-slate-900 border border-slate-700 rounded text-white font-mono text-xs"
                       />
                     </div>
                   </div>
 
-                  <div className="pt-2">
-                    <div className="p-2.5 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 text-xs flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                        <span>Sesión Autenticada: <strong>Laia Cachinero Baranda</strong></span>
-                      </div>
-                      <span className="text-[10px] uppercase font-bold bg-emerald-500/20 px-2 py-0.5 rounded">
-                        Alumno
-                      </span>
-                    </div>
+                  <div className="p-1.5 rounded bg-emerald-950/90 border border-emerald-500/50 text-[10.5px] text-emerald-200 flex items-center justify-between">
+                    <span>Sesión: <strong>Laia Cachinero Baranda</strong></span>
+                    <span className="bg-emerald-500/30 text-emerald-300 font-bold px-1.5 py-0.5 rounded text-[9px]">
+                      ALUMNO
+                    </span>
                   </div>
 
-                  {/* Simulador de conmutación de rol */}
-                  <div className="pt-2 border-t border-slate-800 text-[11px] text-slate-400 flex items-center justify-between">
-                    <span>Conmutador de Rol (Dual):</span>
-                    <div className="inline-flex rounded-lg bg-slate-800 p-0.5">
+                  {/* Switcher de rol */}
+                  <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1">
+                    <span>Conmutador pedagógico:</span>
+                    <div className="inline-flex rounded bg-slate-800 p-0.5">
                       <button
                         onClick={() => setSimRoleView('student')}
-                        className={`px-2 py-1 rounded text-[10px] font-bold ${
+                        className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
                           simRoleView === 'student' ? 'bg-brand-500 text-slate-950' : 'text-slate-400'
                         }`}
                       >
-                        Vista Alumno
+                        Alumno
                       </button>
                       <button
                         onClick={() => setSimRoleView('teacher')}
-                        className={`px-2 py-1 rounded text-[10px] font-bold ${
+                        className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${
                           simRoleView === 'teacher' ? 'bg-purple-500 text-white' : 'text-slate-400'
                         }`}
                       >
-                        Vista Docente
+                        Docente
                       </button>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* 2. SIMULACIÓN MATERIAS & AULAS */}
+              {/* 2. MATERIAS Y AULAS SIMULTÁNEAS */}
               {activeFeature.simulation === 'subjects' && (
-                <div className="space-y-4">
+                <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="text-sm font-bold text-white">Catálogo de Materias Activas</h4>
-                      <p className="text-xs text-slate-400">Asignaturas con exámenes y aulas independientes</p>
+                      <div className="text-[11px] font-bold text-white">Materias y Aulas Desplegadas</div>
+                      <div className="text-[9px] text-brand-400">CFGS Documentación y Administración Sanitarias</div>
                     </div>
-                    <span className="text-xs bg-brand-500/20 text-brand-300 font-bold px-2.5 py-1 rounded-lg">
-                      Curso 2026/2027
+                    <span className="text-[9px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded font-mono">
+                      2026/2027
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                    <div className="p-3.5 rounded-xl bg-slate-900 border border-brand-500/50 space-y-2">
-                      <div className="flex items-center justify-between font-bold text-white">
-                        <span className="flex items-center gap-1.5">
-                          <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-                          Codificación CIM-10
-                        </span>
-                        <span className="text-emerald-400 font-mono text-[10px]">CIM10-TRONCAL</span>
+                  <div className="grid grid-cols-2 gap-1.5 text-[10px]">
+                    <div className="p-2 rounded bg-slate-900 border border-brand-500/40 space-y-1">
+                      <div className="font-bold text-white flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-blue-400" />
+                        Codificación CIM-10
                       </div>
-                      <p className="text-slate-400 text-[11px]">2 aulas activas (Grupo Mañana, Tarde) · 35 alumnos</p>
+                      <div className="text-slate-400 text-[9px]">2 aulas (Mañana / Tarde)</div>
+                      <div className="text-emerald-400 font-bold text-[9px]">28/35 matriculados</div>
                     </div>
 
-                    <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-700 space-y-2">
-                      <div className="flex items-center justify-between font-bold text-white">
-                        <span className="flex items-center gap-1.5">
-                          <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />
-                          Documentación Sanitaria
-                        </span>
-                        <span className="text-purple-400 font-mono text-[10px]">DOCSAN-01</span>
+                    <div className="p-2 rounded bg-slate-900 border border-slate-700 space-y-1">
+                      <div className="font-bold text-white flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-purple-400" />
+                        Documentación Sanitaria
                       </div>
-                      <p className="text-slate-400 text-[11px]">1 aula activa · Docente titular asignado</p>
-                    </div>
-                  </div>
-
-                  {/* Tabla de aulas */}
-                  <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 space-y-2 text-xs">
-                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">
-                      Aulas Desplegadas:
-                    </span>
-                    <div className="divide-y divide-slate-800 text-[11px]">
-                      <div className="py-1.5 flex items-center justify-between text-slate-300">
-                        <span>Aula DAS 26/27 - Grupo A (Mañana)</span>
-                        <span className="text-emerald-400 font-semibold">28/35 matriculados</span>
-                      </div>
-                      <div className="py-1.5 flex items-center justify-between text-slate-300">
-                        <span>Aula DAS 26/27 - Grupo B (Tarde)</span>
-                        <span className="text-emerald-400 font-semibold">24/35 matriculados</span>
-                      </div>
+                      <div className="text-slate-400 text-[9px]">1 aula activa</div>
+                      <div className="text-emerald-400 font-bold text-[9px]">24/30 matriculados</div>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* 3. SIMULACIÓN PDFS E IA EN 3 NIVELES */}
+              {/* 3. PDFS E INFERENCIA EN 3 NIVELES */}
               {activeFeature.simulation === 'pdf_ai' && (
-                <div className="space-y-4">
-                  <div className="p-4 rounded-xl bg-slate-900 border border-dashed border-brand-500/60 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <FileText className="w-8 h-8 text-brand-400" />
+                <div className="space-y-2">
+                  <div className="p-2 rounded bg-slate-900 border border-dashed border-brand-500/60 flex items-center justify-between text-[10px]">
+                    <div className="flex items-center gap-2">
+                      <FileText className="w-5 h-5 text-brand-400 flex-shrink-0" />
                       <div>
-                        <div className="text-xs font-bold text-white">Guia_Codificacion_Urgencias_2026.pdf</div>
-                        <div className="text-[10px] text-emerald-400 flex items-center gap-1">
-                          <Check className="w-3 h-3" /> Cabecera mágica %PDF- verificada (Seguro)
-                        </div>
+                        <div className="font-bold text-white truncate max-w-[170px]">Guia_Codificacion_Urgencias.pdf</div>
+                        <div className="text-emerald-400 text-[9px]">Cabecera mágica %PDF- verificada</div>
                       </div>
                     </div>
-                    <span className="text-xs bg-brand-500/20 text-brand-300 px-2.5 py-1 rounded-lg font-bold">
-                      PDF Procesado
+                    <span className="bg-brand-500/20 text-brand-300 px-1.5 py-0.5 rounded text-[9px] font-bold">
+                      Seguro
                     </span>
                   </div>
 
-                  <div className="space-y-2">
-                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-                      Cadena de Fallback Resiliente en 3 Niveles:
-                    </span>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
-                      <div className="p-3 bg-slate-900 rounded-xl border border-slate-700">
-                        <div className="font-bold text-blue-300">Nivel 1: Ollama Local</div>
-                        <p className="text-[10px] text-slate-400 mt-1">100% privado en hardware del centro</p>
-                      </div>
-                      <div className="p-3 bg-slate-900 rounded-xl border border-slate-700">
-                        <div className="font-bold text-purple-300">Nivel 2: Cloud AI</div>
-                        <p className="text-[10px] text-slate-400 mt-1">Modelos institucionales en nube</p>
-                      </div>
-                      <div className="p-3 bg-emerald-950/80 rounded-xl border border-emerald-500/60">
-                        <div className="font-bold text-emerald-300">Nivel 3: Motor Determinista</div>
-                        <p className="text-[10px] text-emerald-200 mt-1">100% offline sin internet garantizado</p>
-                      </div>
+                  <div className="grid grid-cols-3 gap-1 text-[9px]">
+                    <div className="p-1.5 rounded bg-slate-900 border border-slate-700 text-center">
+                      <div className="font-bold text-blue-300">1. Ollama</div>
+                      <div className="text-slate-400">Privado local</div>
+                    </div>
+                    <div className="p-1.5 rounded bg-slate-900 border border-slate-700 text-center">
+                      <div className="font-bold text-purple-300">2. Cloud AI</div>
+                      <div className="text-slate-400">Escala institucional</div>
+                    </div>
+                    <div className="p-1.5 rounded bg-emerald-950 border border-emerald-500/60 text-center">
+                      <div className="font-bold text-emerald-300">3. Offline</div>
+                      <div className="text-emerald-200">100% Determinista</div>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* 4. SIMULACIÓN MEAP & RESOLUCIÓN RAZONADA EN 4 BLOQUES */}
+              {/* 4. METODOLOGÍA MEAP & EXPLICACIÓN EN 4 BLOQUES */}
               {activeFeature.simulation === 'test_exam' && (
-                <div className="space-y-3.5 text-xs">
+                <div className="space-y-1.5 text-[10.5px]">
                   <div className="flex items-center justify-between">
-                    <span className="px-2 py-0.5 rounded bg-brand-500/20 text-brand-300 text-[10px] font-bold">
-                      CASO CLÍNICO · NIVEL 4 (ALTA COMPLEJIDAD)
+                    <span className="text-[9px] font-bold bg-brand-500/20 text-brand-300 px-1.5 py-0.5 rounded">
+                      MEAP NIVEL 4 · ALTA COMPLEJIDAD
                     </span>
-                    <span className="text-[10px] text-slate-400 font-mono">Pregunta 1 de 10</span>
+                    <span className="text-[9px] text-slate-400">Pregunta 1 de 10</span>
                   </div>
 
-                  <p className="text-slate-200 text-xs leading-relaxed bg-slate-900 p-3 rounded-xl border border-slate-800">
-                    Paciente de 68 años con fibrilación auricular crónica anticoagulada que ingresa por hematoma subdural traumático tras caída casual en domicilio. Se realiza evacuación quirúrgica urgente.
+                  <p className="text-slate-200 text-[10px] leading-tight bg-slate-900 p-2 rounded border border-slate-800">
+                    Varón 68 años con fibrilación auricular que sufre traumatismo con hematoma subdural tras caída casual. Evacuación urgente.
                   </p>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  <div className="grid grid-cols-2 gap-1 text-[9.5px]">
                     {[
-                      { id: 'A', text: 'I48.0 (Fibrilación auricular) como DP + S06.5X0A' },
-                      { id: 'B', text: 'S06.5X0A (Hematoma subdural traumático con pérdida de conciencia) como DP' },
-                      { id: 'C', text: 'W19.XXXA (Caída no especificada) como DP' },
-                      { id: 'D', text: 'I62.0 (Hematoma subdural no traumático)' },
+                      { id: 'A', text: 'I48.0 (FA crónica) como DP' },
+                      { id: 'B', text: 'S06.5X0A (Hematoma subdural) como DP' },
+                      { id: 'C', text: 'W19.XXXA (Caída casual)' },
+                      { id: 'D', text: 'I62.0 (Hematoma no traumático)' },
                     ].map((opt) => (
                       <button
                         key={opt.id}
@@ -1077,7 +1224,7 @@ export default function PresentationViewer() {
                           setSimSelectedOption(opt.id as any);
                           setSimShowReasoned(true);
                         }}
-                        className={`p-2.5 rounded-xl text-left transition border ${
+                        className={`p-1.5 rounded text-left transition border ${
                           simSelectedOption === opt.id
                             ? opt.id === 'B'
                               ? 'bg-emerald-950 border-emerald-500 text-emerald-200 font-bold'
@@ -1090,109 +1237,101 @@ export default function PresentationViewer() {
                     ))}
                   </div>
 
-                  {/* Modal de 4 bloques desplegado */}
                   {simShowReasoned && (
-                    <div className="p-3 bg-slate-900 rounded-xl border border-emerald-500/40 space-y-1.5 text-[11px] text-slate-300">
+                    <div className="p-2 rounded bg-slate-900 border border-emerald-500/40 text-[9px] space-y-1 text-slate-300">
                       <div className="font-bold text-emerald-400 flex items-center gap-1">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Resolución Razonada en 4 Bloques:
+                        <Check className="w-3 h-3" /> Explicación en 4 Bloques:
                       </div>
-                      <div className="grid grid-cols-2 gap-2 text-[10px] text-slate-400 pt-1">
-                        <div>1. <strong>Análisis:</strong> Motivo del ingreso es el trauma craneal.</div>
-                        <div>2. <strong>Ruta CIM-10:</strong> Hematoma &gt; subdural &gt; traumático (S06.5).</div>
-                        <div>3. <strong>Reglas:</strong> La causa de admisión rige la jerarquía diagnóstica.</div>
-                        <div>4. <strong>Distractores:</strong> A, C y D confunden etiología y comorbilidad.</div>
+                      <div className="grid grid-cols-2 gap-1 text-[8.5px] text-slate-400">
+                        <div>1. <strong>Análisis:</strong> Motivo de ingreso rige la jerarquía.</div>
+                        <div>2. <strong>Ruta CIM:</strong> Hematoma &gt; subdural &gt; traumático (S06.5).</div>
+                        <div>3. <strong>Reglas:</strong> Normas de codificación de causas externas.</div>
+                        <div>4. <strong>Distractores:</strong> A, C y D confunden etiología o comorbilidad.</div>
                       </div>
                     </div>
                   )}
                 </div>
               )}
 
-              {/* 5. SIMULACIÓN ANALÍTICA DE APRENDIZAJE & SVG */}
+              {/* 5. ANALÍTICA DE APRENDIZAJE & GRÁFICA SVG */}
               {activeFeature.simulation === 'learning_chart' && (
-                <div className="space-y-3 text-xs">
+                <div className="space-y-1.5 text-[10px]">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-slate-400 text-[11px]">Ámbito:</span>
-                      <div className="inline-flex rounded-lg bg-slate-800 p-0.5">
-                        <button
-                          onClick={() => setSimSubjectFilter('all')}
-                          className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                            simSubjectFilter === 'all' ? 'bg-brand-500 text-slate-950' : 'text-slate-400'
-                          }`}
-                        >
-                          En Conjunto
-                        </button>
-                        <button
-                          onClick={() => setSimSubjectFilter('cim10')}
-                          className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                            simSubjectFilter === 'cim10' ? 'bg-blue-600 text-white' : 'text-slate-400'
-                          }`}
-                        >
-                          CIM-10
-                        </button>
-                      </div>
+                    <div className="flex items-center gap-1 text-[9px]">
+                      <span className="text-slate-400">Ámbito:</span>
+                      <button
+                        onClick={() => setSimSubjectFilter('all')}
+                        className={`px-1.5 py-0.5 rounded font-bold ${
+                          simSubjectFilter === 'all' ? 'bg-brand-500 text-slate-950' : 'bg-slate-800 text-slate-400'
+                        }`}
+                      >
+                        En Conjunto
+                      </button>
+                      <button
+                        onClick={() => setSimSubjectFilter('cim10')}
+                        className={`px-1.5 py-0.5 rounded font-bold ${
+                          simSubjectFilter === 'cim10' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400'
+                        }`}
+                      >
+                        CIM-10
+                      </button>
                     </div>
-
-                    <span className="text-emerald-400 font-bold font-mono text-sm">
-                      Media: 8.4 / 10
-                    </span>
+                    <span className="text-emerald-400 font-bold font-mono text-xs">Media: 8.4/10</span>
                   </div>
 
-                  {/* Curva SVG animada */}
-                  <div className="p-3 bg-slate-900 rounded-xl border border-slate-800">
-                    <svg viewBox="0 0 400 100" className="w-full h-24">
-                      <line x1="20" y1="50" x2="380" y2="50" stroke="#f43f5e" strokeWidth="1" strokeDasharray="3 3" />
-                      <text x="375" y="46" fill="#f43f5e" fontSize="8" textAnchor="end">Aprobado (5.0)</text>
+                  <div className="p-2 bg-slate-900 rounded border border-slate-800">
+                    <svg viewBox="0 0 360 85" className="w-full h-16">
+                      <line x1="10" y1="42" x2="350" y2="42" stroke="#f43f5e" strokeWidth="1" strokeDasharray="3 3" />
+                      <text x="345" y="38" fill="#f43f5e" fontSize="7" textAnchor="end">Aprobado 5.0</text>
                       <polyline
-                        points="30,80 70,65 110,70 150,55 190,40 230,45 270,30 310,25 350,20"
+                        points="20,68 60,54 100,58 140,46 180,32 220,36 260,24 300,20 340,16"
                         fill="none"
                         stroke="#6366f1"
-                        strokeWidth="3"
+                        strokeWidth="2.5"
                         strokeLinecap="round"
                       />
                       {[
-                        [30, 80, '4.2'],
-                        [110, 70, '5.8'],
-                        [190, 40, '7.6'],
-                        [270, 30, '8.2'],
-                        [350, 20, '9.1'],
-                      ].map(([x, y, val], i) => (
-                        <circle key={i} cx={Number(x)} cy={Number(y)} r="4" fill="#a5b4fc" stroke="#312e81" strokeWidth="2" />
+                        [20, 68],
+                        [100, 58],
+                        [180, 32],
+                        [260, 24],
+                        [340, 16],
+                      ].map(([x, y], i) => (
+                        <circle key={i} cx={x} cy={y} r="3" fill="#a5b4fc" stroke="#312e81" strokeWidth="1.5" />
                       ))}
                     </svg>
-                    <div className="flex justify-between text-[10px] text-slate-400 px-2 mt-1">
-                      <span>Evaluación 1</span>
-                      <span>Evaluación 5</span>
-                      <span>Evaluación 10</span>
+                    <div className="flex justify-between text-[8px] text-slate-400 px-1 mt-0.5">
+                      <span>Prueba 1</span>
+                      <span>Prueba 5</span>
+                      <span>Prueba 10</span>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* 6. SIMULACIÓN CHAT DE AULA */}
+              {/* 6. CHAT DE AULA */}
               {activeFeature.simulation === 'chat' && (
-                <div className="space-y-3 text-xs">
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                    <span className="font-bold text-white flex items-center gap-1.5">
-                      <MessageSquare className="w-4 h-4 text-indigo-400" />
-                      Canal General · Aula DAS 26/27
+                <div className="space-y-1.5 text-[10px]">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-1">
+                    <span className="font-bold text-white flex items-center gap-1">
+                      <MessageSquare className="w-3.5 h-3.5 text-indigo-400" /> Canal General DAS 26/27
                     </span>
-                    <span className="text-[10px] text-emerald-400">Canal Seguro FHSJD</span>
+                    <span className="text-[9px] text-emerald-400">Canal FHSJD Seguro</span>
                   </div>
 
-                  <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                    <div className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-[11px] space-y-1">
-                      <div className="flex justify-between text-slate-400 font-bold">
+                  <div className="space-y-1 text-[9.5px]">
+                    <div className="p-1.5 rounded bg-slate-900 border border-slate-800 space-y-0.5">
+                      <div className="flex justify-between text-slate-400 font-bold text-[8.5px]">
                         <span>Prof. Roca (Docente Titular)</span>
                         <span>10:15</span>
                       </div>
                       <p className="text-slate-200">
-                        Recordad revisar las notas de Excluye 1 en el Capítulo 19 antes del simulacro de mañana.
+                        Recordad revisar las notas de Excluye 1 en el Capítulo 19 antes del examen.
                       </p>
                     </div>
 
-                    <div className="p-2.5 rounded-xl bg-indigo-950/80 border border-indigo-500/40 text-[11px] space-y-1 ml-4">
-                      <div className="flex justify-between text-indigo-300 font-bold">
+                    <div className="p-1.5 rounded bg-indigo-950/80 border border-indigo-500/40 space-y-0.5 ml-3">
+                      <div className="flex justify-between text-indigo-300 font-bold text-[8.5px]">
                         <span>Laia Cachinero Baranda</span>
                         <span>10:18</span>
                       </div>
@@ -1204,121 +1343,118 @@ export default function PresentationViewer() {
                 </div>
               )}
 
-              {/* 7. SIMULACIÓN MANUALES POR ROL */}
+              {/* 7. MANUALES POR ROL */}
               {activeFeature.simulation === 'manuals' && (
-                <div className="space-y-3 text-xs">
+                <div className="space-y-1.5 text-[10px]">
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-white">Centro Oficial de Manuales</span>
-                    <span className="text-[10px] text-brand-400">Markdown Integrado</span>
+                    <span className="text-[9px] text-brand-400">Markdown Filtrado</span>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                    <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 space-y-1">
+                  <div className="grid grid-cols-2 gap-1 text-[9px]">
+                    <div className="p-1.5 rounded bg-slate-900 border border-slate-800">
                       <div className="font-bold text-emerald-300">MANUAL_ALUMNOS.md</div>
-                      <p className="text-[10px] text-slate-400">Guía de acceso, MEAP, gráfica y RGPD (Visible)</p>
+                      <div className="text-slate-400 text-[8px]">Acceso, MEAP, RGPD</div>
                     </div>
-                    <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 space-y-1">
+                    <div className="p-1.5 rounded bg-slate-900 border border-slate-800">
                       <div className="font-bold text-blue-300">MANUAL_PROFESORES.md</div>
-                      <p className="text-[10px] text-slate-400">Configuración de pruebas y monitor (Docente)</p>
+                      <div className="text-slate-400 text-[8px]">Exámenes y Pizarra</div>
                     </div>
-                    <div className="p-3 bg-slate-900 rounded-xl border border-purple-500/50 space-y-1">
-                      <div className="font-bold text-purple-300">MANUAL_ADMINISTRADORES.md</div>
-                      <p className="text-[10px] text-slate-400">SOC, alertas, roles y copias (Admin)</p>
+                    <div className="p-1.5 rounded bg-slate-900 border border-purple-500/40">
+                      <div className="font-bold text-purple-300">MANUAL_ADMIN.md</div>
+                      <div className="text-slate-400 text-[8px]">SOC, RGPD y Roles</div>
                     </div>
-                    <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 space-y-1">
-                      <div className="font-bold text-amber-300">MANUAL_INSTITUTO_IT.md</div>
-                      <p className="text-[10px] text-slate-400">Despliegue offline y red escolar (Técnico)</p>
+                    <div className="p-1.5 rounded bg-slate-900 border border-slate-800">
+                      <div className="font-bold text-amber-300">MANUAL_INSTITUTO.md</div>
+                      <div className="text-slate-400 text-[8px]">Despliegue Portable</div>
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* 8. SIMULACIÓN PANEL SOC & RGPD */}
+              {/* 8. PANEL SOC & RGPD */}
               {activeFeature.simulation === 'soc' && (
-                <div className="space-y-3 text-xs">
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                    <span className="font-bold text-white flex items-center gap-1.5">
-                      <ShieldAlert className="w-4 h-4 text-rose-400" />
-                      Panel SOC · Telemetría en Tiempo Real
+                <div className="space-y-1.5 text-[10px]">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-1">
+                    <span className="font-bold text-white flex items-center gap-1 text-[10px]">
+                      <ShieldAlert className="w-3.5 h-3.5 text-rose-400" /> Telemetría SOC
                     </span>
-                    <span className="text-[10px] text-emerald-400 font-bold bg-emerald-950 px-2 py-0.5 rounded">
+                    <span className="text-[8.5px] text-emerald-400 font-bold bg-emerald-950 px-1.5 py-0.5 rounded">
                       AES-256-GCM Activo
                     </span>
                   </div>
 
-                  <div className="space-y-1.5 font-mono text-[10px]">
-                    <div className="p-2 bg-slate-900 rounded-lg flex items-center justify-between text-slate-300">
-                      <span>[INFO] LOGIN_SUCCESS usr_core_admin (IP hash: 8f3c...b2)</span>
-                      <span className="text-emerald-400">OK</span>
+                  <div className="space-y-1 font-mono text-[8.5px]">
+                    <div className="p-1 bg-slate-900 rounded flex items-center justify-between text-slate-300">
+                      <span>[INFO] LOGIN_SUCCESS usr_core_admin</span>
+                      <span className="text-emerald-400 font-bold">OK</span>
                     </div>
-                    <div className="p-2 bg-slate-900 rounded-lg flex items-center justify-between text-slate-300">
+                    <div className="p-1 bg-slate-900 rounded flex items-center justify-between text-slate-300">
                       <span>[WARN] RATE_LIMIT_CHECKED /api/auth/login</span>
-                      <span className="text-amber-400">Filtrado</span>
+                      <span className="text-amber-400 font-bold">FILTRADO</span>
                     </div>
-                    <div className="p-2 bg-slate-900 rounded-lg flex items-center justify-between text-slate-300">
+                    <div className="p-1 bg-slate-900 rounded flex items-center justify-between text-slate-300">
                       <span>[INFO] RGPD_PORTABILITY_EXPORT (Art. 20)</span>
-                      <span className="text-blue-400">Generado</span>
+                      <span className="text-blue-400 font-bold">DESCARGA</span>
                     </div>
                   </div>
 
-                  <div className="pt-2 flex items-center justify-between">
-                    <span className="text-[10px] text-slate-400">Alertas: Webhook Telegram + SMTP</span>
+                  <div className="pt-1 flex items-center justify-between text-[9px]">
+                    <span className="text-slate-400">Alertas: Webhook Telegram + SMTP</span>
                     <button
                       onClick={() => setSimRevokeModalOpen(!simRevokeModalOpen)}
-                      className="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-lg text-[10px] transition"
+                      className="px-2 py-0.5 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded text-[8.5px]"
                     >
-                      Pulsador Revocación Global
+                      Revocación Global
                     </button>
                   </div>
                 </div>
               )}
 
-              {/* 9. SIMULACIÓN CIERRE & DESPLIEGUE */}
+              {/* 9. CIERRE INSTITUCIONAL */}
               {activeFeature.simulation === 'closing' && (
-                <div className="text-center py-6 space-y-3">
-                  <div className="w-12 h-12 mx-auto rounded-full bg-brand-500/20 text-brand-300 flex items-center justify-center">
-                    <HeartHandshake className="w-6 h-6" />
+                <div className="text-center py-2 space-y-1">
+                  <div className="w-8 h-8 mx-auto rounded-full bg-brand-500/20 text-brand-300 flex items-center justify-center">
+                    <HeartHandshake className="w-4 h-4" />
                   </div>
-                  <h3 className="text-base font-bold text-white">Compromiso San Juan de Dios</h3>
-                  <p className="text-xs text-slate-300 max-w-sm mx-auto">
-                    Formación de documentalistas clínicos con tecnología soberana, excelencia asistencial y ciberseguridad BancActiu.
-                  </p>
-                  <div className="pt-2 text-xs font-bold text-brand-400">Promoción DAS 2026/2027</div>
+                  <div className="text-xs font-bold text-white">Compromiso San Juan de Dios</div>
+                  <div className="text-[10px] text-slate-300 max-w-xs mx-auto">
+                    Formación de documentalistas clínicos con tecnología soberana y excelencia asistencial.
+                  </div>
+                  <div className="text-[9px] font-bold text-brand-400 pt-0.5">Promoción DAS 2026/2027</div>
                 </div>
               )}
-              </div>
-            </ClassroomCinematicWrapper>
-          </div>
+            </div>
+          </RealisticClassroomStage>
         </div>
       </div>
 
-      {/* BARRA DE CONTROLES INFERIOR: REPRODUCCIÓN, NAVEGACIÓN Y AVANCE COMPACTA */}
-      <div className="bg-slate-900 text-white p-2.5 sm:p-3 rounded-xl border border-slate-800 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-3">
-        {/* Controles principales de audio / secuencia */}
-        <div className="flex flex-wrap items-center gap-2.5">
+      {/* BARRA INFERIOR DE REPRODUCCIÓN Y NAVEGACIÓN COMPACTA */}
+      <div className="bg-slate-900 text-white px-3 py-1.5 rounded-xl border border-slate-800 shadow-md flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={handlePrevScene}
             disabled={currentSceneIdx === 0}
-            className="p-2.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:hover:bg-slate-800 text-white rounded-xl transition"
+            className="p-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-white rounded-lg transition"
             title="Escena anterior"
           >
-            <SkipBack className="w-4 h-4" />
+            <SkipBack className="w-3.5 h-3.5" />
           </button>
 
           <button
             type="button"
             onClick={togglePlay}
-            className="px-5 py-2.5 bg-brand-500 hover:bg-brand-400 text-slate-950 font-bold rounded-xl transition shadow-lg shadow-brand-500/20 flex items-center gap-2 text-sm"
+            className="px-3.5 py-1.5 bg-brand-500 hover:bg-brand-400 text-slate-950 font-bold rounded-lg transition shadow-md flex items-center gap-1.5 text-xs"
           >
             {isPlaying ? (
               <>
-                <Pause className="w-4 h-4 fill-slate-950" />
+                <Pause className="w-3.5 h-3.5 fill-slate-950" />
                 <span>Pausar</span>
               </>
             ) : (
               <>
-                <Play className="w-4 h-4 fill-slate-950" />
+                <Play className="w-3.5 h-3.5 fill-slate-950" />
                 <span>{hasAudioFile ? 'Iniciar Locución' : 'Comenzar'}</span>
               </>
             )}
@@ -1328,19 +1464,19 @@ export default function PresentationViewer() {
             type="button"
             onClick={handleNextScene}
             disabled={currentSceneIdx === scenes.length - 1}
-            className="p-2.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 disabled:hover:bg-slate-800 text-white rounded-xl transition"
+            className="p-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-white rounded-lg transition"
             title="Siguiente escena"
           >
-            <SkipForward className="w-4 h-4" />
+            <SkipForward className="w-3.5 h-3.5" />
           </button>
 
           <button
             type="button"
             onClick={handleRestart}
-            className="p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition"
-            title="Reiniciar presentación desde el inicio"
+            className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition"
+            title="Reiniciar"
           >
-            <RotateCcw className="w-4 h-4" />
+            <RotateCcw className="w-3.5 h-3.5" />
           </button>
 
           <button
@@ -1351,58 +1487,38 @@ export default function PresentationViewer() {
                 setIsMuted(!isMuted);
               }
             }}
-            className="p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition ml-1"
-            title={isMuted ? 'Activar sonido' : 'Silenciar'}
+            className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition"
+            title={isMuted ? 'Sonido activado' : 'Silenciar'}
           >
-            {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+            {isMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
           </button>
-
-          {/* Selector de velocidad en barra */}
-          <div className="flex items-center gap-1 bg-slate-800/80 px-2 py-1 rounded-xl text-xs font-semibold text-slate-300 ml-2">
-            <span>Velocidad:</span>
-            {([1, 1.5, 2] as const).map((spd) => (
-              <button
-                key={spd}
-                onClick={() => setPlaybackSpeed(spd)}
-                className={`px-1.5 py-0.5 rounded ${
-                  playbackSpeed === spd ? 'bg-brand-500 text-slate-950 font-bold' : 'hover:text-white'
-                }`}
-              >
-                {spd}x
-              </button>
-            ))}
-          </div>
         </div>
 
-        {/* Indicador de progreso de la escena y enlace al guion */}
-        <div className="flex items-center gap-4 text-xs text-slate-400">
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-slate-200">
-              Escena {currentScene.id} de {scenes.length}
-            </span>
+        {/* Indicador de escena y guion */}
+        <div className="flex items-center gap-3 text-[11px] text-slate-400">
+          <div className="flex items-center gap-1.5 font-mono">
+            <span className="text-slate-200">Escena {currentScene.id}/{scenes.length}</span>
             <span>·</span>
-            <span className="font-mono text-slate-400">
-              {Math.floor(currentTime)}s / ~{duration > 0 ? Math.floor(duration) : 260}s
-            </span>
+            <span>{Math.floor(currentTime)}s / {duration > 0 ? Math.floor(duration) : 260}s</span>
           </div>
 
-          <label className="flex items-center gap-1.5 cursor-pointer select-none">
+          <label className="hidden sm:flex items-center gap-1 cursor-pointer select-none text-[10px]">
             <input
               type="checkbox"
               checked={autoAdvance}
               onChange={(e) => setAutoAdvance(e.target.checked)}
-              className="rounded border-slate-700 text-brand-500 focus:ring-0"
+              className="rounded border-slate-700 text-brand-500 w-3 h-3"
             />
-            <span>Avance automático</span>
+            <span>Avance auto</span>
           </label>
 
           <a
             href="/docs/GUION_VIDEO_PRESENTACION.md"
             target="_blank"
-            className="text-brand-400 hover:text-brand-300 font-bold underline flex items-center gap-1"
+            className="text-brand-400 hover:text-brand-300 font-bold underline flex items-center gap-1 text-[11px]"
           >
-            <Download className="w-3.5 h-3.5" />
-            Guion
+            <Download className="w-3 h-3" />
+            <span className="hidden sm:inline">Guion</span>
           </a>
         </div>
       </div>

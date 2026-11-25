@@ -39,27 +39,29 @@ export default async function PresentacionPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <div className="max-w-7xl mx-auto px-2 sm:px-4 py-1.5 h-[calc(100dvh-3.25rem)] flex flex-col justify-between overflow-hidden gap-1.5">
       {/* Migas de pan y retorno */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-xs text-slate-500 font-semibold">
+      <div className="flex items-center justify-between text-xs text-slate-500 font-semibold px-1 flex-shrink-0">
+        <div className="flex items-center gap-2">
           <Link href="/" className="hover:text-brand-600 transition">Inicio</Link>
           <span>/</span>
-          <Link href="/manuales" className="hover:text-brand-600 transition">Manuales y Recursos</Link>
+          <Link href="/manuales" className="hover:text-brand-600 transition">Manuales</Link>
           <span>/</span>
-          <span className="text-slate-800">Presentación Multimedia</span>
+          <span className="text-slate-800 font-bold">Presentación Multimedia</span>
         </div>
 
         <Link
           href="/manuales"
-          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-bold text-slate-700 transition shadow-xs"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-[11px] font-bold text-slate-700 transition shadow-2xs"
         >
           <BookOpen className="w-3.5 h-3.5 text-brand-600" />
-          Ver Manuales de Uso
+          <span>Manuales</span>
         </Link>
       </div>
 
-      <PresentationViewer />
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <PresentationViewer />
+      </div>
     </div>
   );
 }
